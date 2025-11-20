@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	Model string `json:"model"`
+	Model             string `json:"model"`
+	Command_delimiter string `json:"command_delimiter"`
 }
 
 func newConfig(model string) (Config, error) {
