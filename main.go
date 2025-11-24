@@ -7,10 +7,12 @@ import (
 )
 
 func main() {
-	cfg, err := newConfig("ChatGPT")
+	s, err := readSettings(".")
+	cfg, err := newConfig(s)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-	fmt.Printf("using %s\n", cfg.model)
+	fmt.Printf("using %s\n", cfg.Settings.Model)
+	startRepl(&cfg)
 }

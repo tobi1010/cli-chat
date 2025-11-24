@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"cli-chat/internal/api"
 	"fmt"
 	"os"
 	"strings"
@@ -13,22 +14,14 @@ type cliCommand struct {
 	callback func(*Config, string) error
 }
 
-func commandExit(*Config, string) error {
-	fmt.Println("EXIT")
-	return nil
-}
-
-func getCommands() map[string]cliCommand {
-	return map[string]cliCommand{
-		"exit": {
-			name:     "exit",
-			callback: commandExit,
-		},
-	}
+var commands = map[string]cliCommand{
+	"exit": {
+		name:     "exit",
+		callback: commandExit,
+	},
 }
 
 func startRepl(cfg *Config) error {
-	commands := getCommands()
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("llm>")
@@ -36,8 +29,9 @@ func startRepl(cfg *Config) error {
 
 		text := strings.TrimSpace(scanner.Text())
 
-		if strings.HasPrefix(text, cfg.Command_delimiter) {
+		if strings.HasPrefix(text, cfg.Settings.CommandPrefix) {
 			// command
+			fmt.Println("Command!")
 			lowerText := strings.ToLower(text)
 			tokens := strings.Fields(lowerText)
 			for _, token := range tokens {
@@ -47,9 +41,13 @@ func startRepl(cfg *Config) error {
 					if err != nil {
 						return fmt.Errorf("Error executing command: %w", err)
 					}
-				} else {
-					// send text to llm
 				}
+			}
+
+		} else {
+			err := api.StreamResponse(cfg.Client, cfg.Settings.Model, text)
+			if err != nil {
+				return fmt.Errorf("Error creating response: %w", err)
 			}
 		}
 	}
