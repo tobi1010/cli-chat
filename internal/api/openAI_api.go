@@ -6,6 +6,13 @@ type openAiPayload struct {
 	Stream bool   `json:"stream"`
 }
 
+type deltaEvent struct {
+	Type           string   `json:"type"`
+	SequenceNumber int      `json:"sequence_number"`
+	Response       struct{} `json:"response"`
+	Delta          string   `json:"delta"`
+}
+
 type response struct {
 	ID                string `json:"id"`
 	Object            string `json:"object"`
@@ -60,7 +67,7 @@ type response struct {
 	} `json:"metadata"`
 }
 
-type streamRespponse struct {
+type StreamResponse struct {
 	Type           string `json:"type"`
 	SequenceNumber int    `json:"sequence_number"`
 	Response       struct {
@@ -81,10 +88,10 @@ type streamRespponse struct {
 			Role    string `json:"role"`
 			Status  string `json:"status"`
 			Content []struct {
-				Type        string        `json:"type"`
-				Text        string        `json:"text"`
-				Annotations []interface{} `json:"annotations"`
-				Logprobs    []interface{} `json:"logprobs"`
+				Type        string `json:"type"`
+				Text        string `json:"text"`
+				Annotations any    `json:"annotations"`
+				Logprobs    any    `json:"logprobs"`
 			} `json:"content"`
 		} `json:"output"`
 		ParallelToolCalls    bool `json:"parallel_tool_calls"`

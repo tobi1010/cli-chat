@@ -1,5 +1,7 @@
 {
   "provider": "openai",
   "model": "gpt-5",
-  "command_prefix": "/"
+  "command_prefix": "/",
+  "timeout": 60
 }
+

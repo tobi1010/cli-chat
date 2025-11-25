@@ -1,18 +1,20 @@
 package main
 
 import (
-	"fmt"
+	"cli-chat/settings"
 	"log"
 	"os"
 )
 
+const CWD = "."
+
 func main() {
-	s, err := readSettings(".")
+	s, err := settings.Read(CWD)
+	settings.Print(CWD)
 	cfg, err := newConfig(s)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-	fmt.Printf("using %s\n", cfg.Settings.Model)
 	startRepl(&cfg)
 }

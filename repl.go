@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"cli-chat/internal/api"
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -29,7 +30,7 @@ func startRepl(cfg *Config) error {
 
 		text := strings.TrimSpace(scanner.Text())
 
-		if strings.HasPrefix(text, cfg.Settings.CommandPrefix) {
+		if strings.HasPrefix(text, cfg.AppSettings.CommandPrefix) {
 			// command
 			fmt.Println("Command!")
 			lowerText := strings.ToLower(text)
@@ -45,7 +46,31 @@ func startRepl(cfg *Config) error {
 			}
 
 		} else {
-			err := api.StreamResponse(cfg.Client, cfg.Settings.Model, text)
+			ctx := context.Background()
+			deltas, fullCh, errCh, cancel, err := api.StreamDeltas(ctx, cfg.Client, cfg.AppSettings.Model, text)
+			if err != nil {
+				return fmt.Errorf("streaming deltas: %w", err)
+			}
+			defer cancel()
+			var buf strings.Builder
+			for d := range deltas {
+				fmt.Print(d)
+				buf.WriteString(d)
+			}
+			accText := buf.String()
+
+			select {
+			case finalRes := <-fullCh:
+				fmt.Printf("ID: %s\n Model: %s", finalRes.Response.ID, finalRes.Response.Model)
+
+			case e := <-errCh:
+				if e != nil {
+					fmt.Println("stream error:", e)
+				}
+			default:
+			}
+			_ = accText
+
 			if err != nil {
 				return fmt.Errorf("Error creating response: %w", err)
 			}
