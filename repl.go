@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"cli-chat/config"
 	"cli-chat/internal/api"
 	"context"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 type cliCommand struct {
 	name     string
 	args     []string
-	callback func(*Config, string) error
+	callback func(*config.Config, string) error
 }
 
 var commands = map[string]cliCommand{
@@ -20,21 +21,29 @@ var commands = map[string]cliCommand{
 		name:     "exit",
 		callback: commandExit,
 	},
+	"set-prefix":     {},
+	"set-columns":    {},
+	"list-chats":     {},
+	"list-models":    {},
+	"list-providers": {},
 }
 
-func startRepl(cfg *Config) error {
+func startRepl(cfg *config.Config) error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("llm>")
 		scanner.Scan()
 
 		text := strings.TrimSpace(scanner.Text())
+		if text == "" {
+			continue
+		}
 
 		if strings.HasPrefix(text, cfg.AppSettings.CommandPrefix) {
 			// command
-			fmt.Println("Command!")
 			lowerText := strings.ToLower(text)
-			tokens := strings.Fields(lowerText)
+			trimmed := strings.TrimPrefix(lowerText, cfg.AppSettings.CommandPrefix)
+			tokens := strings.Fields(trimmed)
 			for _, token := range tokens {
 
 				if command, found := commands[token]; found {
@@ -47,33 +56,25 @@ func startRepl(cfg *Config) error {
 
 		} else {
 			ctx := context.Background()
-			deltas, fullCh, errCh, cancel, err := api.StreamDeltas(ctx, cfg.Client, cfg.AppSettings.Model, text)
+			stream, err := api.CreateStreamResponse(ctx, cfg, text)
 			if err != nil {
-				return fmt.Errorf("streaming deltas: %w", err)
+				return fmt.Errorf("recieving stream : %w", err)
 			}
-			defer cancel()
-			var buf strings.Builder
-			for d := range deltas {
-				fmt.Print(d)
-				buf.WriteString(d)
-			}
-			accText := buf.String()
-
-			select {
-			case finalRes := <-fullCh:
-				fmt.Printf("ID: %s\n Model: %s", finalRes.Response.ID, finalRes.Response.Model)
-
-			case e := <-errCh:
-				if e != nil {
-					fmt.Println("stream error:", e)
+			var acc strings.Builder
+			lineLength := 0
+			for delta := range stream {
+				fmt.Print(delta)
+				len, err := acc.WriteString(delta)
+				if err != nil {
+					return fmt.Errorf("building response string: %w", err)
 				}
-			default:
+				lineLength += len
+				if lineLength > cfg.AppSettings.Columns {
+					fmt.Print('\n')
+					lineLength = 0
+				}
 			}
-			_ = accText
-
-			if err != nil {
-				return fmt.Errorf("Error creating response: %w", err)
-			}
+			fmt.Println()
 		}
 	}
 }

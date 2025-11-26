@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cli-chat/settings"
+	"cli-chat/config"
 	"log"
 	"os"
 )
@@ -9,12 +9,15 @@ import (
 const CWD = "."
 
 func main() {
-	s, err := settings.Read(CWD)
-	settings.Print(CWD)
-	cfg, err := newConfig(s)
+	s, err := config.ReadSettings(CWD)
+	config.PrintSettings(CWD)
+	cfg, err := config.NewConfig(s)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-	startRepl(&cfg)
+	err = startRepl(&cfg)
+	if err != nil {
+		log.Printf("%v\n", err)
+	}
 }

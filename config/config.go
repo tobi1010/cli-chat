@@ -1,17 +1,16 @@
-package main
+package config
 
 import (
 	"cli-chat/internal/client"
-	"cli-chat/settings"
 	"time"
 )
 
 type Config struct {
 	Client      *client.Client
-	AppSettings settings.Settings
+	AppSettings Settings
 }
 
-func newConfig(s settings.Settings) (Config, error) {
+func NewConfig(s Settings) (Config, error) {
 	cfg := Config{
 		Client:      client.New(time.Duration(s.Timeout) * time.Second),
 		AppSettings: s,

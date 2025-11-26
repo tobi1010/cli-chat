@@ -3,11 +3,12 @@ package api
 import (
 	"bufio"
 	"bytes"
-	"cli-chat/internal/client"
+	"cli-chat/config"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 )
@@ -15,185 +16,104 @@ import (
 const key = "OPENAI_API_KEY"
 const urlString = "https://api.openai.com/v1/responses"
 
-func StreamDeltas(
-	ctx context.Context,
-	client *client.Client,
-	model string,
-	input string,
-) (
-	deltas <-chan string,
-	done <-chan StreamResponse,
-	errc <-chan error,
-	cancel func(),
-	err error,
-) {
-	fmt.Println("[dbg] streaming deltas")
-	apiKey := os.Getenv(key)
-	if apiKey == "" {
-		return nil, nil, nil, nil, fmt.Errorf("%s not set", key)
-	}
-	fmt.Println("here1")
+type Stream struct {
+	Body   io.ReadCloser
+	Cancel func()
+}
+type Payload struct {
+	Model  string `json:"model"`
+	Input  string `json:"input"`
+	Stream bool   `json:"stream"`
+}
 
-	payload := openAiPayload{
-		Model:  model,
+type Delta struct {
+	Type           string `json:"type"`
+	SequenceNumber int    `json:"sequence_number"`
+	ItemID         string `json:"item_id"`
+	OutputIndex    int    `json:"output_index"`
+	ContentIndex   int    `json:"content_index"`
+	Delta          string `json:"delta"`
+	Logprobs       []any  `json:"logprobs"`
+	Obfuscation    string `json:"obfuscation"`
+}
+
+func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string) (chan string, error) {
+	payload := Payload{
+		Model:  cfg.AppSettings.Model,
 		Input:  input,
 		Stream: true,
 	}
-	body, err := json.Marshal(payload)
+	stream, err := doStreamRequest(ctx, *cfg, payload)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("marshalling JSON: %w", err)
+		return nil, fmt.Errorf("making stream request: %w", err)
+	}
+
+	outCh := make(chan string, 64)
+
+	go func() {
+		defer close(outCh)
+		defer stream.Cancel()
+
+		reader := bufio.NewReader(stream.Body)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+			}
+			if len(line) > 0 {
+				if bytes.HasPrefix(line, []byte("data:")) {
+					trimmed := bytes.TrimSpace(bytes.TrimPrefix(line, []byte("data:")))
+					var delta Delta
+					err = json.Unmarshal(trimmed, &delta)
+					outCh <- delta.Delta
+				}
+			}
+			if err != nil {
+				if err != io.EOF {
+					log.Printf("non-EOF error while reading from stream: %v", err)
+					return
+				}
+				return
+			}
+		}
+	}()
+	return outCh, nil
+}
+
+func doStreamRequest(ctx context.Context, cfg config.Config, payload any) (*Stream, error) {
+	apiKey := os.Getenv(key)
+	if apiKey == "" {
+		return nil, fmt.Errorf("%s not set", key)
 	}
 	url := urlString
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
+	b, err := json.Marshal(payload)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("creating request %w", err)
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(b))
+	if err != nil {
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/event-stream")
 
-	res, err := client.HttpClient.Do(req)
+	res, err := cfg.Client.HttpClient.Do(req)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("doing request: %w", err)
+		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
 		defer res.Body.Close()
-		b, _ := io.ReadAll(res.Body)
-		return nil, nil, nil, nil, fmt.Errorf("bad status: %s; body: %s", res.Status, string(b))
+		msg, _ := io.ReadAll(res.Body)
+		return nil, fmt.Errorf("bad status %s: %s", res.Status, string(msg))
 	}
-	outCh := make(chan string, 64)
-	fullCh := make(chan StreamResponse, 1)
-	errCh := make(chan error, 1)
-
-	cancel = func() {
-		_ = res.Body.Close()
-	}
-
-	fmt.Println("[dbg] starting goroutine")
-	go func() {
-		fmt.Println("[dbg] running channels")
-		defer close(outCh)
-		defer close(fullCh)
-		defer close(errCh)
-		defer res.Body.Close()
-
-		reader := bufio.NewReader(res.Body)
-		for {
-			line, err := reader.ReadBytes('\n')
-			if err != nil {
-				if err != io.EOF {
-					errCh <- fmt.Errorf("reading stream: %w", err)
-				}
-				return
-			}
-			fmt.Println("[dbg] line:", string(line))
-			if !bytes.HasPrefix(line, []byte("data: ")) {
-				continue
-			}
-			data := bytes.TrimSpace(bytes.TrimPrefix(line, []byte("data: ")))
-			if bytes.Equal(data, []byte("[DONE]")) {
-				return
-			}
-
-			var deltaEv deltaEvent
-			err = json.Unmarshal(data, &deltaEv)
-			if err != nil {
-				errCh <- fmt.Errorf("unmarshalling JSON: %w", err)
-				return
-			}
-			if deltaEv.Type == "response.output_text.delta" {
-				if deltaEv.Delta != "" {
-					outCh <- deltaEv.Delta
-				}
-				continue
-			}
-			var fullResponse StreamResponse
-			err = json.Unmarshal(data, &fullResponse)
-			if err != nil {
-				errCh <- fmt.Errorf("unmarshalling JSON: %w", err)
-				return
-			}
-			if fullResponse.Response.ID != "" {
-				fullCh <- fullResponse
-				return
-			}
-		}
-	}()
-	return outCh, fullCh, errCh, cancel, nil
+	return &Stream{
+		Body:   res.Body,
+		Cancel: func() { _ = res.Body.Close() },
+	}, nil
 }
-
-// func StreamResponse(client *client.Client, model, input string) error {
-// 	apiKey := os.Getenv(key)
-// 	url := urlString
-//
-// 	payload := openAiPayload{
-// 		Model:  model,
-// 		Input:  input,
-// 		Stream: true,
-// 	}
-//
-// 	body, err := json.Marshal(payload)
-// 	if err != nil {
-// 		return fmt.Errorf("error marshalling json: %w", err)
-// 	}
-//
-// 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
-// 	if err != nil {
-// 		return fmt.Errorf("error creating request: %w", err)
-// 	}
-//
-// 	req.Header.Set("Authorization", "Bearer "+apiKey)
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Accept", "text/event-stream")
-//
-// 	res, err := client.HttpClient.Do(req)
-// 	if err != nil {
-// 		return fmt.Errorf("error making request: %w", err)
-// 	}
-// 	defer res.Body.Close()
-//
-// 	if res.StatusCode != http.StatusOK {
-// 		return fmt.Errorf("bad status: %s", res.Status)
-// 	}
-//
-// 	reader := bufio.NewReader(res.Body)
-// 	for {
-// 		line, err := reader.ReadBytes('\n')
-// 		if err != nil {
-// 			break
-// 		}
-// 		if len(line) < 6 || !bytes.HasPrefix(line, []byte("data: ")) {
-// 			continue
-// 		}
-// 		data := bytes.TrimPrefix(line, []byte("data: "))
-// 		trimmedData := bytes.TrimSpace(data)
-// 		if bytes.Equal([]byte("[DONE]"), trimmedData) {
-// 			fmt.Println("done")
-// 			break
-// 		}
-// 		var streamDelta deltaEvent
-// 		err = json.Unmarshal(trimmedData, &streamDelta)
-// 		if err != nil {
-// 			return fmt.Errorf("error unmashalling json: %w", err)
-// 		}
-// 		if streamDelta.Type == "response.output_text.delta" {
-// 			fmt.Print(streamDelta.Delta)
-// 			continue
-// 		}
-//
-// 		// var fullResponse streamRespponse
-// 		// err = json.Unmarshal(data, &fullResponse)
-// 		// if err != nil {
-// 		// 	return fmt.Errorf("error unmashalling json: %w", err)
-// 		// }
-// 		// for _, output := range fullResponse.Response.Output {
-// 		// 	for _, content := range output.Content {
-// 		// 		fmt.Println(content.Text)
-// 		// 	}
-// 		// }
-//
-// 	}
-// 	fmt.Print("\n")
-//
-// 	return nil
-// }
