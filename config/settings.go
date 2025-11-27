@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -72,31 +73,42 @@ func ReadSettings(settings *Settings) error {
 	}
 	return nil
 }
+
+func getConfigPath() (string, error) {
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		return filepath.Join(xdg, APP_DIR), nil
+	}
+	if xdg := os.Getenv("XDG_HOME"); xdg != "" {
+		return filepath.Join(xdg, ".config", APP_DIR), nil
+	}
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("resolving user home dir: %w", err)
+	}
+	return filepath.Join(userHome, ".config", APP_DIR), nil
+}
+
 func InitDefaultSettings() error {
-	cfgRoot, err := os.UserConfigDir()
+	path, err := getConfigPath()
 	if err != nil {
-		return fmt.Errorf("getting config dir: %w", err)
+		return fmt.Errorf("resolving config path: %w", err)
 	}
-	target := filepath.Join(cfgRoot, APP_DIR, FILENAME)
-
-	if ok, err := fileExists(target); err != nil {
-		return fmt.Errorf("checking existing settings: %w", err)
-	} else if ok {
+	fp := filepath.Join(path, FILENAME)
+	if info, err := os.Stat(fp); err == nil && info.Mode().IsRegular() {
 		return nil
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("stat: %s, %w", info, err)
 	}
-
-	if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
-		return fmt.Errorf("creating config directory: %w", err)
+	if err := os.MkdirAll(path, 0700); err != nil {
+		return fmt.Errorf("creating config dir: %w", err)
 	}
-
-	def := NewDefaultSettings()
-	data, err := json.MarshalIndent(def, "", "  ")
+	defaults := NewDefaultSettings()
+	data, err := json.MarshalIndent(defaults, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal defaults: %w", err)
+		return fmt.Errorf("marshalling json: %w", err)
 	}
-
-	if err := os.WriteFile(target, data, 0600); err != nil {
-		return fmt.Errorf("write defaults: %w", err)
+	if err := os.WriteFile(fp, data, 0600); err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
 	return nil
 }
