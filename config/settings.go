@@ -2,8 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -15,8 +17,8 @@ type Settings struct {
 	Provider      string `json:"provider"`
 	Model         string `json:"model"`
 	CommandPrefix string `json:"command_prefix"`
-	Timeout       uint   `json:"timeout"`
-	Columns       uint   `json:"columns"`
+	Timeout       int    `json:"timeout"`
+	Columns       int    `json:"columns"`
 }
 
 const (
@@ -39,8 +41,13 @@ func NewDefaultSettings() Settings {
 	return DefaultSettings
 }
 
-func PrintSettings(path string) error {
-	s, err := ReadSettings(path)
+func PrintSettings() error {
+	path, err := GetSettingsPath()
+	if err != nil {
+		return fmt.Errorf("getting config path: %w", err)
+	}
+	var s Settings
+	err = ReadSettings(&s)
 	if err != nil {
 		return fmt.Errorf("error reading settings from %s: %w", path, err)
 	}
@@ -49,52 +56,96 @@ func PrintSettings(path string) error {
 	return nil
 }
 
-func ReadSettings(path string) (Settings, error) {
-	file := path + "/settings.json"
-	data, err := os.ReadFile(file)
+func ReadSettings(settings *Settings) error {
+	path, err := GetSettingsPath()
 	if err != nil {
-		if os.IsNotExist(err) {
-			defaults := NewDefaultSettings()
-			if err := os.MkdirAll(path, 0755); err != nil {
-				return Settings{}, fmt.Errorf("Error creating config directory: %w", err)
-			}
-			if err := WriteSettings(path, defaults); err != nil {
-				return Settings{}, fmt.Errorf("Error writing settings: %w", err)
-			}
-			return defaults, nil
-		}
-		return Settings{}, fmt.Errorf("Error reading config file %w", err)
+		return fmt.Errorf("getting config path: %w", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("Error reading config file %w", err)
 	}
 
-	var s Settings
-	err = json.Unmarshal(data, &s)
+	err = json.Unmarshal(data, settings)
 	if err != nil {
-		return Settings{}, fmt.Errorf("Error unmashalling json %w", err)
+		return fmt.Errorf("Error unmashalling json %w", err)
 	}
-	return s, nil
+	return nil
+}
+func InitDefaultSettings() error {
+	cfgRoot, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("getting config dir: %w", err)
+	}
+	target := filepath.Join(cfgRoot, APP_DIR, FILENAME)
+
+	if ok, err := fileExists(target); err != nil {
+		return fmt.Errorf("checking existing settings: %w", err)
+	} else if ok {
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
+		return fmt.Errorf("creating config directory: %w", err)
+	}
+
+	def := NewDefaultSettings()
+	data, err := json.MarshalIndent(def, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal defaults: %w", err)
+	}
+
+	if err := os.WriteFile(target, data, 0600); err != nil {
+		return fmt.Errorf("write defaults: %w", err)
+	}
+	return nil
 }
 
-func WriteSettings(path string, s Settings) error {
-	data, err := json.MarshalIndent(s, "", "  ")
+func WriteSettings(s *Settings) error {
+	path, err := GetSettingsPath()
+	if err != nil {
+		return fmt.Errorf("getting settings path: %w", err)
+	}
+	data, err := json.MarshalIndent(*s, "", "  ")
 	if err != nil {
 		return fmt.Errorf("Error marshalling config: %w", err)
 	}
-	file := path + "/settings.json"
-	err = os.WriteFile(file, data, 0644)
+	file := path
+	err = os.WriteFile(file, data, 0600)
 	if err != nil {
 		return fmt.Errorf("Error writing file %w", err)
 	}
 	return nil
 }
-func getConfigPath() (string, error) {
-	path, err := os.UserConfigDir()
+func GetSettingsPath() (string, error) {
+	configPath, err := os.UserConfigDir()
 	if err != nil {
-		return fmt.Errorf("getting user config path: %w", err)
+		return "", fmt.Errorf("getting user config path: %w", err)
+	}
+	path := filepath.Join(configPath, APP_DIR, FILENAME)
+	found, err := fileExists(path)
+	if err != nil {
+		return "", fmt.Errorf("checking settings file: %w", err)
+	}
+	if found {
+		return path, nil
 	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("getting working directory: %w", err)
+		return "", fmt.Errorf("getting working directory: %w", err)
 	}
+	path = filepath.Join(pwd, FILENAME)
 	return path, nil
+}
+
+func fileExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, fmt.Errorf("stat %s: %w", path, err)
+	}
+	return info.Mode().IsRegular(), nil
 }

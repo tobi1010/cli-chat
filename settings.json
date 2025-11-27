@@ -1,7 +1,0 @@
-{
-  "provider": "openai",
-  "model": "gpt-5",
-  "command_prefix": "/",
-  "timeout": 60,
-  "columns": 80
-}

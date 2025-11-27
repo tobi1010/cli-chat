@@ -13,7 +13,7 @@ import (
 type cliCommand struct {
 	name     string
 	args     []string
-	callback func(*config.Config, string) error
+	callback func(*config.Config, []string) error
 }
 
 var commands = map[string]cliCommand{
@@ -21,8 +21,15 @@ var commands = map[string]cliCommand{
 		name:     "exit",
 		callback: commandExit,
 	},
-	"set-prefix":     {},
-	"set-columns":    {},
+	"print-settings": {
+		name:     "print-settings",
+		callback: commandPrintSettings,
+	},
+	"set-prefix": {},
+	"set-columns": {
+		name:     "set-columns",
+		callback: commandSetColumns,
+	},
 	"list-chats":     {},
 	"list-models":    {},
 	"list-providers": {},
@@ -41,16 +48,13 @@ func startRepl(cfg *config.Config) error {
 
 		if strings.HasPrefix(text, cfg.AppSettings.CommandPrefix) {
 			// command
-			lowerText := strings.ToLower(text)
-			trimmed := strings.TrimPrefix(lowerText, cfg.AppSettings.CommandPrefix)
-			tokens := strings.Fields(trimmed)
-			for _, token := range tokens {
+			lowerText := strings.ToLower(strings.TrimPrefix(text, cfg.AppSettings.CommandPrefix))
+			tokens := strings.Fields(lowerText)
 
-				if command, found := commands[token]; found {
-					err := command.callback(cfg, "")
-					if err != nil {
-						return fmt.Errorf("Error executing command: %w", err)
-					}
+			if command, found := commands[tokens[0]]; found {
+				err := command.callback(cfg, tokens[1:])
+				if err != nil {
+					return fmt.Errorf("Error executing command: %w", err)
 				}
 			}
 
@@ -70,7 +74,7 @@ func startRepl(cfg *config.Config) error {
 				}
 				lineLength += len
 				if lineLength > cfg.AppSettings.Columns {
-					fmt.Print('\n')
+					fmt.Print("\n")
 					lineLength = 0
 				}
 			}

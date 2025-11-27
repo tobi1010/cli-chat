@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func commandExit(cfg *config.Config, arg string) error {
+func commandExit(cfg *config.Config, args []string) error {
 	fmt.Println("Goodbye")
 	os.Exit(0)
 	return fmt.Errorf("Error closing chat!")

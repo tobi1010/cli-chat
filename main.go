@@ -3,21 +3,32 @@ package main
 import (
 	"cli-chat/config"
 	"log"
-	"os"
 )
 
-const CWD = "."
-
 func main() {
-	s, err := config.ReadSettings(CWD)
-	config.PrintSettings(CWD)
-	cfg, err := config.NewConfig(s)
+	err := config.InitDefaultSettings()
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		log.Fatalf("initializing default settings: %v", err)
 	}
-	err = startRepl(&cfg)
+
+	var s config.Settings
+	err = config.ReadSettings(&s)
 	if err != nil {
-		log.Printf("%v\n", err)
+		log.Fatalf("reading settings: %v", err)
+	}
+
+	err = config.PrintSettings()
+	if err != nil {
+		log.Fatalf("printing settings: %v", err)
+	}
+
+	cfg, err := config.NewConfig(&s)
+	if err != nil {
+		log.Fatalf("creating config: %v", err)
+	}
+
+	err = startRepl(cfg)
+	if err != nil {
+		log.Fatalf("repl: %v", err)
 	}
 }

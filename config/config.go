@@ -7,11 +7,11 @@ import (
 
 type Config struct {
 	Client      *client.Client
-	AppSettings Settings
+	AppSettings *Settings
 }
 
-func NewConfig(s Settings) (Config, error) {
-	cfg := Config{
+func NewConfig(s *Settings) (*Config, error) {
+	cfg := &Config{
 		Client:      client.New(time.Duration(s.Timeout) * time.Second),
 		AppSettings: s,
 	}
