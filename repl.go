@@ -25,14 +25,30 @@ var commands = map[string]cliCommand{
 		name:     "print-settings",
 		callback: commandPrintSettings,
 	},
-	"set-prefix": {},
+	"set-prefix": {
+		name:     "set-prefix",
+		callback: commandSetPrefix,
+	},
 	"set-columns": {
 		name:     "set-columns",
 		callback: commandSetColumns,
 	},
-	"list-chats":     {},
-	"list-models":    {},
-	"list-providers": {},
+	"list-chats": {
+		name:     "list-chats",
+		callback: commandListChats,
+	},
+	"list-models": {
+		name:     "list-models",
+		callback: commandListModels,
+	},
+	"list-providers": {
+		name:     "list-prividers",
+		callback: commandListProviders,
+	},
+	"usage": {
+		name:     "usage",
+		callback: commandUsage,
+	},
 }
 
 func startRepl(cfg *config.Config) error {

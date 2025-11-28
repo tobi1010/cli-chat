@@ -130,10 +130,15 @@ func WriteSettings(s *Settings) error {
 	return nil
 }
 func GetSettingsPath() (string, error) {
-	configPath, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("getting user config path: %w", err)
+	path := os.Getenv("XDG_CONFIG_HOME")
+	if path != "" {
+		return filepath.Join(path, APP_DIR, FILENAME), nil
 	}
+
+	// configPath, err := os.UserConfigDir()
+	// if err != nil {
+	// 	return "", fmt.Errorf("getting user config path: %w", err)
+	// }
 	path := filepath.Join(configPath, APP_DIR, FILENAME)
 	found, err := fileExists(path)
 	if err != nil {
