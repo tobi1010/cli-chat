@@ -132,27 +132,31 @@ func WriteSettings(s *Settings) error {
 func GetSettingsPath() (string, error) {
 	path := os.Getenv("XDG_CONFIG_HOME")
 	if path != "" {
-		return filepath.Join(path, APP_DIR, FILENAME), nil
+		configPath := filepath.Join(path, APP_DIR)
+		err := os.MkdirAll(configPath, 0700)
+		if err != nil {
+			return "", fmt.Errorf("creating config dir: %w", err)
+		}
+		return filepath.Join(path, APP_DIR), nil
 	}
-
-	// configPath, err := os.UserConfigDir()
-	// if err != nil {
-	// 	return "", fmt.Errorf("getting user config path: %w", err)
-	// }
-	path := filepath.Join(configPath, APP_DIR, FILENAME)
-	found, err := fileExists(path)
+	path, err := os.UserConfigDir()
 	if err != nil {
-		return "", fmt.Errorf("checking settings file: %w", err)
+		return "", fmt.Errorf("resolving user config dir: %w", err)
 	}
-	if found {
-		return path, nil
+	path = os.Getenv("HOME")
+	if path != "" {
+		configPath := filepath.Join(path, ".config", APP_DIR)
+		err = os.MkdirAll(configPath, 0700)
+		if err != nil {
+			return "", fmt.Errorf("creating config dir: %w", err)
+		}
+		return configPath, nil
 	}
-
-	pwd, err := os.Getwd()
+	path, err = os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("getting working directory: %w", err)
+		return "", fmt.Errorf("resolving pwd: %w", err)
 	}
-	path = filepath.Join(pwd, FILENAME)
+	log.Println("no config dir found, using pwd.")
 	return path, nil
 }
 
