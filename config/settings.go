@@ -50,7 +50,7 @@ func PrintSettings() error {
 	var s Settings
 	err = ReadSettings(&s)
 	if err != nil {
-		return fmt.Errorf("error reading settings from %s: %w", path, err)
+		return fmt.Errorf("reading settings from %s: %w", path, err)
 	}
 	b, _ := json.MarshalIndent(s, "", "  ")
 	fmt.Println(string(b))
@@ -58,38 +58,30 @@ func PrintSettings() error {
 }
 
 func ReadSettings(settings *Settings) error {
+	// InitDefaultSettings must be called first to ensunre dir exists
+
 	path, err := GetSettingsPath()
 	if err != nil {
 		return fmt.Errorf("getting config path: %w", err)
 	}
-	data, err := os.ReadFile(path)
+	file := filepath.Join(path, FILENAME)
+	data, err := os.ReadFile(file)
 	if err != nil {
-		return fmt.Errorf("Error reading config file %w", err)
+		return fmt.Errorf("reading config file: %w", err)
 	}
 
 	err = json.Unmarshal(data, settings)
 	if err != nil {
-		return fmt.Errorf("Error unmashalling json %w", err)
+		return fmt.Errorf("unmarshalling json: %w", err)
 	}
 	return nil
 }
 
-func getConfigPath() (string, error) {
-	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		return filepath.Join(xdg, APP_DIR), nil
-	}
-	if xdg := os.Getenv("XDG_HOME"); xdg != "" {
-		return filepath.Join(xdg, ".config", APP_DIR), nil
-	}
-	userHome, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("resolving user home dir: %w", err)
-	}
-	return filepath.Join(userHome, ".config", APP_DIR), nil
-}
-
 func InitDefaultSettings() error {
-	path, err := getConfigPath()
+	// must be called on startup to guarantee APP_DIR exitsts
+
+	path, err := GetSettingsPath()
+	fmt.Printf("settings path: %s", path)
 	if err != nil {
 		return fmt.Errorf("resolving config path: %w", err)
 	}
@@ -97,9 +89,9 @@ func InitDefaultSettings() error {
 	if info, err := os.Stat(fp); err == nil && info.Mode().IsRegular() {
 		return nil
 	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("stat: %s, %w", info, err)
+		return fmt.Errorf("stat %s: %w", fp, err)
 	}
-	if err := os.MkdirAll(path, 0700); err != nil {
+	if err := os.MkdirAll(path, 0o700); err != nil {
 		return fmt.Errorf("creating config dir: %w", err)
 	}
 	defaults := NewDefaultSettings()
@@ -107,66 +99,48 @@ func InitDefaultSettings() error {
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
 	}
-	if err := os.WriteFile(fp, data, 0600); err != nil {
+	if err := os.WriteFile(fp, data, 0o600); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
 	return nil
 }
 
 func WriteSettings(s *Settings) error {
+	// InitDefaultSettings must be called first to ensunre dir exists
 	path, err := GetSettingsPath()
 	if err != nil {
 		return fmt.Errorf("getting settings path: %w", err)
 	}
 	data, err := json.MarshalIndent(*s, "", "  ")
 	if err != nil {
-		return fmt.Errorf("Error marshalling config: %w", err)
+		return fmt.Errorf("marshalling config: %w", err)
 	}
-	file := path
-	err = os.WriteFile(file, data, 0600)
-	if err != nil {
-		return fmt.Errorf("Error writing file %w", err)
+	file := filepath.Join(path, FILENAME)
+	if err = os.WriteFile(file, data, 0o600); err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
 	return nil
 }
 func GetSettingsPath() (string, error) {
-	path := os.Getenv("XDG_CONFIG_HOME")
-	if path != "" {
-		configPath := filepath.Join(path, APP_DIR)
-		err := os.MkdirAll(configPath, 0700)
-		if err != nil {
-			return "", fmt.Errorf("creating config dir: %w", err)
-		}
-		return filepath.Join(path, APP_DIR), nil
+	xdg := os.Getenv("XDG_CONFIG_HOME")
+	if xdg != "" {
+		return filepath.Join(xdg, APP_DIR), nil
 	}
-	path, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("resolving user config dir: %w", err)
+	// ucd, err := os.UserConfigDir()
+	// if err != nil {
+	// 	return "", fmt.Errorf("resolving user config dir: %w", err)
+	// }
+	// if ucd != "" {
+	// 	return filepath.Join(ucd, APP_DIR), nil
+	// }
+	home := os.Getenv("HOME")
+	if home != "" {
+		return filepath.Join(home, ".config", APP_DIR), nil
 	}
-	path = os.Getenv("HOME")
-	if path != "" {
-		configPath := filepath.Join(path, ".config", APP_DIR)
-		err = os.MkdirAll(configPath, 0700)
-		if err != nil {
-			return "", fmt.Errorf("creating config dir: %w", err)
-		}
-		return configPath, nil
-	}
-	path, err = os.Getwd()
+	pwd, err := os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("resolving pwd: %w", err)
 	}
-	log.Println("no config dir found, using pwd.")
-	return path, nil
-}
-
-func fileExists(path string) (bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return false, nil
-		}
-		return false, fmt.Errorf("stat %s: %w", path, err)
-	}
-	return info.Mode().IsRegular(), nil
+	log.Println("could not resolve config dir, falling back to pwd")
+	return pwd, nil
 }
