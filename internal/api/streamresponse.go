@@ -13,17 +13,9 @@ import (
 	"os"
 )
 
-const key = "OPENAI_API_KEY"
-const urlString = "https://api.openai.com/v1/responses"
-
 type Stream struct {
 	Body   io.ReadCloser
 	Cancel func()
-}
-type Payload struct {
-	Model  string `json:"model"`
-	Input  string `json:"input"`
-	Stream bool   `json:"stream"`
 }
 
 type Delta struct {
@@ -38,12 +30,12 @@ type Delta struct {
 }
 
 func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string) (chan string, error) {
-	payload := Payload{
+	payload := openAiPayload{
 		Model:  cfg.AppSettings.Model,
 		Input:  input,
 		Stream: true,
 	}
-	stream, err := doStreamRequest(ctx, *cfg, payload)
+	stream, err := doStreamRequest(ctx, cfg, payload)
 	if err != nil {
 		return nil, fmt.Errorf("making stream request: %w", err)
 	}
@@ -85,19 +77,19 @@ func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string)
 	return outCh, nil
 }
 
-func doStreamRequest(ctx context.Context, cfg config.Config, payload any) (*Stream, error) {
-	apiKey := os.Getenv(key)
+func doStreamRequest(ctx context.Context, cfg *config.Config, payload openAiPayload) (*Stream, error) {
+	apiKey := os.Getenv(cfg.AppSettings.Provider.Key)
 	if apiKey == "" {
-		return nil, fmt.Errorf("%s not set", key)
+		return nil, fmt.Errorf("%s not set", cfg.AppSettings.Provider.Key)
 	}
-	url := urlString
+	url := cfg.AppSettings.Provider.BaseURL + "responses"
 	b, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("marshalling json: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(b))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
@@ -105,7 +97,7 @@ func doStreamRequest(ctx context.Context, cfg config.Config, payload any) (*Stre
 
 	res, err := cfg.Client.HttpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("doing request to %s: %w", url, err)
 	}
 	if res.StatusCode != http.StatusOK {
 		defer res.Body.Close()

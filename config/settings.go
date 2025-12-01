@@ -15,15 +15,25 @@ const (
 )
 
 type Settings struct {
-	Provider      string `json:"provider"`
-	Model         string `json:"model"`
-	CommandPrefix string `json:"command_prefix"`
-	Timeout       int    `json:"timeout"`
-	Columns       int    `json:"columns"`
+	Provider      Provider `json:"provider"`
+	Model         string   `json:"model"`
+	CommandPrefix string   `json:"command_prefix"`
+	Timeout       int      `json:"timeout"`
+	Columns       int      `json:"columns"`
+}
+type Provider struct {
+	Name    string `json:"name"`
+	Key     string `json:"key"`
+	BaseURL string `json:"baseurl"`
+}
+
+var DefaultProvider = Provider{
+	Name:    "openai",
+	Key:     "OPENAI_API_KEY",
+	BaseURL: "https://api.openai.com/v1/",
 }
 
 const (
-	DefaultProvider      = "openai"
 	DefaultModel         = "gpt-5"
 	DefaultCommandPrefix = "/"
 	DefaultTimeout       = 60
