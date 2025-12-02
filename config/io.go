@@ -4,53 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
-
-const (
-	APP_DIR  = "cli-chat"
-	FILENAME = "settings.json"
-)
-
-type Settings struct {
-	Provider      Provider `json:"provider"`
-	Model         string   `json:"model"`
-	CommandPrefix string   `json:"command_prefix"`
-	Timeout       int      `json:"timeout"`
-	Columns       int      `json:"columns"`
-}
-type Provider struct {
-	Name    string `json:"name"`
-	Key     string `json:"key"`
-	BaseURL string `json:"baseurl"`
-}
-
-var DefaultProvider = Provider{
-	Name:    "openai",
-	Key:     "OPENAI_API_KEY",
-	BaseURL: "https://api.openai.com/v1/",
-}
-
-const (
-	DefaultModel         = "gpt-5"
-	DefaultCommandPrefix = "/"
-	DefaultTimeout       = 60
-	DefaultColumns       = 80
-)
-
-var DefaultSettings = Settings{
-	Provider:      DefaultProvider,
-	Model:         DefaultModel,
-	CommandPrefix: DefaultCommandPrefix,
-	Timeout:       DefaultTimeout,
-	Columns:       DefaultColumns,
-}
-
-func NewDefaultSettings() Settings {
-	return DefaultSettings
-}
 
 func PrintSettings() error {
 	path, err := GetSettingsPath()
@@ -128,27 +84,4 @@ func WriteSettings(s *Settings) error {
 		return fmt.Errorf("writing file: %w", err)
 	}
 	return nil
-}
-func GetSettingsPath() (string, error) {
-	xdg := os.Getenv("XDG_CONFIG_HOME")
-	if xdg != "" {
-		return filepath.Join(xdg, APP_DIR), nil
-	}
-	// ucd, err := os.UserConfigDir()
-	// if err != nil {
-	// 	return "", fmt.Errorf("resolving user config dir: %w", err)
-	// }
-	// if ucd != "" {
-	// 	return filepath.Join(ucd, APP_DIR), nil
-	// }
-	home := os.Getenv("HOME")
-	if home != "" {
-		return filepath.Join(home, ".config", APP_DIR), nil
-	}
-	pwd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("resolving pwd: %w", err)
-	}
-	log.Println("could not resolve config dir, falling back to pwd")
-	return pwd, nil
 }
