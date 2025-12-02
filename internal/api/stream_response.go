@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 )
@@ -16,6 +15,11 @@ import (
 type Stream struct {
 	Body   io.ReadCloser
 	Cancel func()
+}
+
+type EventHeader struct {
+	// for peeking at event header.type
+	Type string `json:"type"`
 }
 
 type Delta struct {
@@ -29,7 +33,13 @@ type Delta struct {
 	Obfuscation    string `json:"obfuscation"`
 }
 
-func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string) (chan string, error) {
+type ResponseCompleted struct {
+	Type           string         `json:"type"`
+	SequenceNumber int            `json:"sequence_number"`
+	Response       OpenAiResponse `json:"response"`
+}
+
+func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string) (chan string, chan OpenAiResponse, chan error, error) {
 	payload := openAiPayload{
 		Model:  cfg.AppSettings.Model,
 		Input:  input,
@@ -37,19 +47,24 @@ func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string)
 	}
 	stream, err := doStreamRequest(ctx, cfg, payload)
 	if err != nil {
-		return nil, fmt.Errorf("making stream request: %w", err)
+		return nil, nil, nil, fmt.Errorf("making stream request: %w", err)
 	}
 
 	outCh := make(chan string, 64)
+	fullCh := make(chan OpenAiResponse)
+	errCh := make(chan error)
 
 	go func() {
 		defer close(outCh)
 		defer stream.Cancel()
+		defer close(fullCh)
+		defer close(errCh)
 
 		reader := bufio.NewReader(stream.Body)
 		for {
 			select {
 			case <-ctx.Done():
+				errCh <- ctx.Err()
 				return
 			default:
 			}
@@ -59,22 +74,42 @@ func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string)
 			}
 			if len(line) > 0 {
 				if bytes.HasPrefix(line, []byte("data:")) {
-					trimmed := bytes.TrimSpace(bytes.TrimPrefix(line, []byte("data:")))
-					var delta Delta
-					err = json.Unmarshal(trimmed, &delta)
-					outCh <- delta.Delta
+					payload := bytes.TrimSpace(bytes.TrimPrefix(line, []byte("data:")))
+					var eventHeader EventHeader
+					err = json.Unmarshal(payload, &eventHeader)
+					switch eventHeader.Type {
+					case "response.output_text.delta":
+						var delta Delta
+						err = json.Unmarshal(payload, &delta)
+						if err != nil {
+							errCh <- fmt.Errorf("unmarshalling json: %w", err)
+							return
+						}
+						outCh <- delta.Delta
+
+					case "response.completed":
+						var resCompletedEvent ResponseCompleted
+						err = json.Unmarshal(payload, &resCompletedEvent)
+						if err != nil {
+							errCh <- fmt.Errorf("unmarshalling json: %w", err)
+							return
+						}
+						fullCh <- resCompletedEvent.Response
+						return
+					default:
+					}
 				}
 			}
 			if err != nil {
 				if err != io.EOF {
-					log.Printf("non-EOF error while reading from stream: %v", err)
+					errCh <- fmt.Errorf("non-EOF error while reading from stream: %v", err)
 					return
 				}
 				return
 			}
 		}
 	}()
-	return outCh, nil
+	return outCh, fullCh, errCh, nil
 }
 
 func doStreamRequest(ctx context.Context, cfg *config.Config, payload openAiPayload) (*Stream, error) {

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"cli-chat/config"
 	"context"
 	"encoding/json"
@@ -29,19 +28,8 @@ func GetModels(ctx context.Context, cfg *config.Config) ([]Model, error) {
 		return nil, fmt.Errorf("%s not set", cfg.AppSettings.Provider.Key)
 	}
 
-	payload := openAiPayload{
-		Model:  cfg.AppSettings.Model,
-		Input:  "",
-		Stream: false,
-	}
-
 	url := cfg.AppSettings.Provider.BaseURL + "models"
-	fmt.Println(url)
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling json: %w", err)
-	}
-	req, err := http.NewRequest("GET", url, bytes.NewBuffer(body))
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}

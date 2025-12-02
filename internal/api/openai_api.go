@@ -13,7 +13,7 @@ type deltaEvent struct {
 	Delta          string   `json:"delta"`
 }
 
-type response struct {
+type OpenAiResponse struct {
 	ID                string `json:"id"`
 	Object            string `json:"object"`
 	CreatedAt         int    `json:"created_at"`

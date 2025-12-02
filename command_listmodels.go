@@ -14,7 +14,9 @@ func commandListModels(cfg *config.Config, args []string) error {
 		return fmt.Errorf("requesting models: %w", err)
 	}
 	for _, model := range models {
-		fmt.Println(model.ID)
+		if isChatModel(model) {
+			fmt.Println(model.ID)
+		}
 	}
 	return nil
 }
