@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"cli-chat/commands"
 	"cli-chat/config"
 	"cli-chat/internal/api"
 	"context"
@@ -10,53 +11,8 @@ import (
 	"strings"
 )
 
-type cliCommand struct {
-	name     string
-	args     []string
-	callback func(*config.Config, []string) error
-}
-
-var commands = map[string]cliCommand{
-	"exit": {
-		name:     "exit",
-		callback: commandExit,
-	},
-	"print-settings": {
-		name:     "print-settings",
-		callback: commandPrintSettings,
-	},
-	"set-prefix": {
-		name:     "set-prefix",
-		callback: commandSetPrefix,
-	},
-	"set-columns": {
-		name:     "set-columns",
-		callback: commandSetColumns,
-	},
-	"list-chats": {
-		name:     "list-chats",
-		callback: commandListChats,
-	},
-	"list-models": {
-		name:     "list-models",
-		callback: commandListModels,
-	},
-	"list-providers": {
-		name:     "list-prividers",
-		callback: commandListProviders,
-	},
-	"switch-model": {
-		name:     "switch-model",
-		callback: commandSwitchModel,
-	},
-	"usage": {
-		name:     "usage",
-		callback: commandUsage,
-	},
-}
-
 func startRepl(cfg *config.Config) error {
-	commandListModels(cfg, nil)
+	cmds := commands.GetCommands()
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Printf("%s>", cfg.AppSettings.Model)
@@ -72,8 +28,8 @@ func startRepl(cfg *config.Config) error {
 			lowerText := strings.ToLower(strings.TrimPrefix(text, cfg.AppSettings.CommandPrefix))
 			tokens := strings.Fields(lowerText)
 
-			if command, found := commands[tokens[0]]; found {
-				err := command.callback(cfg, tokens[1:])
+			if command, found := cmds[tokens[0]]; found {
+				err := command.Callback(cfg, tokens[1:])
 				if err != nil {
 					return fmt.Errorf("Error executing command: %w", err)
 				}

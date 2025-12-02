@@ -20,7 +20,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = config.PrintSettings()
 	if err != nil {
 		log.Println("printing settings: %v", err)
 		os.Exit(1)

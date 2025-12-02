@@ -1,11 +1,11 @@
-package main
+package commands
 
 import (
 	"cli-chat/config"
 	"fmt"
 )
 
-func commandSetPrefix(cfg *config.Config, args []string) error {
+func CommandSetPrefix(cfg *config.Config, args []string) error {
 	cfg.AppSettings.CommandPrefix = args[0]
 	err := config.WriteSettings(cfg.AppSettings)
 	if err != nil {

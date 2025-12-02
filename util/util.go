@@ -1,11 +1,11 @@
-package main
+package util
 
 import (
 	"cli-chat/internal/api"
 	"strings"
 )
 
-func isChatModel(model api.Model) bool {
+func IsChatModel(model api.Model) bool {
 
 	exclude := []string{
 		"embedding", "moderation", "tts", "audio", "realtime",

@@ -68,7 +68,7 @@ func PrintSettings() error {
 }
 
 func ReadSettings(settings *Settings) error {
-	// InitDefaultSettings must be called first to ensunre dir exists
+	// InitDefaultSettings must be called first to ensure dir exists
 
 	path, err := GetSettingsPath()
 	if err != nil {
@@ -89,9 +89,7 @@ func ReadSettings(settings *Settings) error {
 
 func InitDefaultSettings() error {
 	// must be called on startup to guarantee APP_DIR exitsts
-
 	path, err := GetSettingsPath()
-	fmt.Printf("settings path: %s", path)
 	if err != nil {
 		return fmt.Errorf("resolving config path: %w", err)
 	}

@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"cli-chat/config"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func commandSetColumns(cfg *config.Config, args []string) error {
+func CommandSetColumns(cfg *config.Config, args []string) error {
 	length, err := strconv.Atoi(args[0])
 	if err != nil {
 		fmt.Println("argument must be a number!")

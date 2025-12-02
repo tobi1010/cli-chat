@@ -1,11 +1,11 @@
-package main
+package commands
 
 import (
 	"cli-chat/config"
 	"fmt"
 )
 
-func commandSwitchModel(cfg *config.Config, args []string) error {
+func CommandSwitchModel(cfg *config.Config, args []string) error {
 	cfg.AppSettings.Model = args[0]
 	err := config.WriteSettings(cfg.AppSettings)
 	if err != nil {

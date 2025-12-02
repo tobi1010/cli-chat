@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"cli-chat/config"
@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func commandExit(cfg *config.Config, args []string) error {
+func CommandExit(cfg *config.Config, args []string) error {
 	fmt.Println("Goodbye")
 	os.Exit(0)
 	return fmt.Errorf("Error closing chat!")
