@@ -18,8 +18,9 @@ const (
 )
 
 type Config struct {
-	Client      *client.Client
-	AppSettings *Settings
+	SettingsPath string
+	Client       *client.Client
+	AppSettings  *Settings
 }
 
 type Provider struct {
@@ -50,10 +51,11 @@ var DefaultSettings = Settings{
 	Columns:       DefaultColumns,
 }
 
-func NewConfig(s *Settings) (*Config, error) {
+func NewConfig(settingsPath string, s *Settings) (*Config, error) {
 	cfg := &Config{
-		Client:      client.New(time.Duration(s.Timeout) * time.Second),
-		AppSettings: s,
+		SettingsPath: settingsPath,
+		Client:       client.New(time.Duration(s.Timeout) * time.Second),
+		AppSettings:  s,
 	}
 	return cfg, nil
 }

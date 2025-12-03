@@ -7,25 +7,13 @@ import (
 )
 
 func main() {
-	err := config.InitDefaultSettings()
+	settings, settingsPath, err := config.EnsureSettings()
 	if err != nil {
 		log.Printf("initializing default settings: %v", err)
 		os.Exit(1)
 	}
 
-	var s config.Settings
-	err = config.ReadSettings(&s)
-	if err != nil {
-		log.Printf("reading settings: %v", err)
-		os.Exit(1)
-	}
-
-	if err != nil {
-		log.Printf("printing settings: %v", err)
-		os.Exit(1)
-	}
-
-	cfg, err := config.NewConfig(&s)
+	cfg, err := config.NewConfig(settingsPath, &settings)
 	if err != nil {
 		log.Printf("creating config: %v", err)
 		os.Exit(1)

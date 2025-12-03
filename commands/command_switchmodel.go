@@ -7,7 +7,7 @@ import (
 
 func CommandSwitchModel(cfg *config.Config, args []string) error {
 	cfg.AppSettings.Model = args[0]
-	err := config.WriteSettings(cfg.AppSettings)
+	err := config.WriteSettings(cfg.AppSettings, cfg.SettingsPath)
 	if err != nil {
 		return fmt.Errorf("writing settings.json: %w", err)
 	}
