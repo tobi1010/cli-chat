@@ -1,45 +1,85 @@
 package config
 
 import (
+	"cli-chat/paths"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func PrintSettings(path string) error {
-	var s Settings
-	err := ReadSettings(&s, path)
+func PrintSettings() error {
+	s, err := ReadSettings()
 	if err != nil {
-		return fmt.Errorf("reading settings from %s: %w", path, err)
+		return fmt.Errorf("reading settings: %w", err)
 	}
 	b, _ := json.MarshalIndent(s, "", "  ")
 	fmt.Println(string(b))
 	return nil
 }
 
-func ReadSettings(settings *Settings, path string) error {
-	file := filepath.Join(path, FILENAME)
-	data, err := os.ReadFile(file)
+func ReadSettings() (*Settings, error) {
+	f, err := paths.SettingsPath()
 	if err != nil {
-		return fmt.Errorf("reading config file: %w", err)
+		return nil, fmt.Errorf("resolving settings path: %w", err)
 	}
-
-	err = json.Unmarshal(data, settings)
+	data, err := os.ReadFile(f)
+	var settings Settings
 	if err != nil {
-		return fmt.Errorf("unmarshalling json: %w", err)
+		if os.IsNotExist(err) {
+			settings = NewDefaultSettings()
+			return &settings, nil
+		}
+		return nil, fmt.Errorf("reading config file: %w", err)
 	}
-	return nil
+	err = json.Unmarshal(data, &settings)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling json: %w", err)
+	}
+	return &settings, nil
 }
 
-func WriteSettings(s *Settings, path string) error {
-	data, err := json.MarshalIndent(*s, "", "  ")
+func (s *Settings) Save() error {
+	f, err := paths.SettingsPath()
 	if err != nil {
+		return fmt.Errorf("resolving settings path: %w", err)
+	}
+	dir := filepath.Dir(f)
+	err = os.MkdirAll(dir, 0o700)
+	if err != nil {
+		return fmt.Errorf("creating settings dir: %w", err)
+	}
+	tmpFile := f + ".tmp"
+
+	fd, err := os.OpenFile(tmpFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
+		return fmt.Errorf("opening temp file: %w", err)
+	}
+
+	data, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		_ = fd.Close()
 		return fmt.Errorf("marshalling config: %w", err)
 	}
-	file := filepath.Join(path, FILENAME)
-	if err = os.WriteFile(file, data, 0o600); err != nil {
-		return fmt.Errorf("writing file: %w", err)
+
+	_, err = fd.Write(data)
+	if err != nil {
+		_ = fd.Close()
+		return fmt.Errorf("writing data: %w", err)
+	}
+	err = fd.Sync()
+	if err != nil {
+		_ = fd.Close()
+		return fmt.Errorf("syncing file: %w", err)
+	}
+	err = fd.Close()
+	if err != nil {
+		return fmt.Errorf("closing file: %w", err)
+	}
+	err = os.Rename(tmpFile, f)
+	if err != nil {
+		_ = os.Remove(tmpFile)
+		return fmt.Errorf("renaming file: %w", err)
 	}
 	return nil
 }

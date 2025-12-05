@@ -2,12 +2,12 @@ package api
 
 import (
 	"cli-chat/config"
+	"cli-chat/internal/auth"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 )
 
 type Model struct {
@@ -23,11 +23,10 @@ type ModelsResponse struct {
 }
 
 func GetModels(ctx context.Context, cfg *config.Config) ([]Model, error) {
-	apiKey := os.Getenv(cfg.AppSettings.Provider.Key)
-	if apiKey == "" {
-		return nil, fmt.Errorf("%s not set", cfg.AppSettings.Provider.Key)
+	apiKey, err := auth.ResolveAPIKey(cfg.AppSettings.Provider.Key)
+	if err != nil {
+		return nil, fmt.Errorf("resloving API key for %s: %w", cfg.AppSettings.Provider, err)
 	}
-
 	url := cfg.AppSettings.Provider.BaseURL + "models"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

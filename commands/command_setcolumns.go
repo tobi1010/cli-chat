@@ -16,7 +16,7 @@ func CommandSetColumns(cfg *config.Config, args []string) error {
 		return nil
 	}
 	cfg.AppSettings.Columns = length
-	err = config.WriteSettings(cfg.AppSettings, cfg.SettingsPath)
+	err = cfg.AppSettings.Save()
 	if err != nil {
 		return fmt.Errorf("writing settings: %w", err)
 	}

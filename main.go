@@ -13,7 +13,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.NewConfig(settingsPath, &settings)
+	cfg, err := config.New(settingsPath, &settings)
 	if err != nil {
 		log.Printf("creating config: %v", err)
 		os.Exit(1)

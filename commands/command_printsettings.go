@@ -6,7 +6,7 @@ import (
 )
 
 func CommandPrintSettings(cfg *config.Config, args []string) error {
-	err := config.PrintSettings(cfg.SettingsPath)
+	err := config.PrintSettings()
 	if err != nil {
 		return fmt.Errorf("printig settings: %w", err)
 	}
