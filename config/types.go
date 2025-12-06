@@ -5,11 +5,6 @@ import (
 	"time"
 )
 
-const (
-	APP_DIR  = "cli-chat"
-	FILENAME = "settings.json"
-)
-
 type Config struct {
 	SettingsPath string
 	Client       *client.Client
