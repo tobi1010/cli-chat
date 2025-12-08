@@ -33,6 +33,6 @@ func (s *Session) LoadOrCreate() error {
 	return nil
 }
 
-func (s *Session) SaveAtomic() error {
+func (s *Session) Save() error {
 	return nil
 }

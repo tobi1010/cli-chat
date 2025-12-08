@@ -1,6 +1,7 @@
 package config
 
 import (
+	"cli-chat/fileatomic"
 	"cli-chat/paths"
 	"encoding/json"
 	"fmt"
@@ -40,46 +41,22 @@ func ReadSettings() (*Settings, error) {
 }
 
 func (s *Settings) Save() error {
-	f, err := paths.SettingsPath()
+	path, err := paths.SettingsPath()
 	if err != nil {
 		return fmt.Errorf("resolving settings path: %w", err)
 	}
-	dir := filepath.Dir(f)
+	dir := filepath.Dir(path)
 	err = os.MkdirAll(dir, 0o700)
 	if err != nil {
 		return fmt.Errorf("creating settings dir: %w", err)
 	}
-	tmpFile := f + ".tmp"
-
-	fd, err := os.OpenFile(tmpFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
-	if err != nil {
-		return fmt.Errorf("opening temp file: %w", err)
-	}
-
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
-		_ = fd.Close()
 		return fmt.Errorf("marshalling config: %w", err)
 	}
-
-	_, err = fd.Write(data)
+	err = fileatomic.Write(path, data, 0o600)
 	if err != nil {
-		_ = fd.Close()
-		return fmt.Errorf("writing data: %w", err)
-	}
-	err = fd.Sync()
-	if err != nil {
-		_ = fd.Close()
-		return fmt.Errorf("syncing file: %w", err)
-	}
-	err = fd.Close()
-	if err != nil {
-		return fmt.Errorf("closing file: %w", err)
-	}
-	err = os.Rename(tmpFile, f)
-	if err != nil {
-		_ = os.Remove(tmpFile)
-		return fmt.Errorf("renaming file: %w", err)
+		return fmt.Errorf("writing settings: %w", err)
 	}
 	return nil
 }
