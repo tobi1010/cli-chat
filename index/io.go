@@ -25,7 +25,7 @@ func Load(path string) (*DB, error) {
 	}
 	return &db, nil
 }
-func SaveAtomic(path string, db *DB) error {
+func (db *DB) Save(path string) error {
 	data, err := json.MarshalIndent(db, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"cli-chat/fileatomic"
 	"cli-chat/paths"
 	"encoding/json"
 	"errors"
@@ -34,12 +35,13 @@ func EnsureSettings() (Settings, string, error) {
 	}
 
 	settings := NewDefaultSettings()
-	encoded, merr := json.MarshalIndent(settings, "", "  ")
-	if merr != nil {
-		return Settings{}, "", fmt.Errorf("marshal defaults: %w", merr)
+	encoded, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return Settings{}, "", fmt.Errorf("marshal defaults: %w", err)
 	}
 
-	if err := os.WriteFile(f, encoded, 0o600); err != nil {
+	err = fileatomic.Write(f, encoded, 0o600)
+	if err != nil {
 		return Settings{}, "", fmt.Errorf("write %s: %w", f, err)
 	}
 
