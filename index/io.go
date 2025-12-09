@@ -11,8 +11,7 @@ func Load(path string) (*DB, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return &DB{
-			LastChatID: "",
-			Chats:      make([]ChatMeta, 0, 10),
+			Chats: make([]ChatMeta, 0, 10),
 		}, nil
 	}
 	if err != nil {

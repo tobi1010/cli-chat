@@ -11,6 +11,7 @@ const (
 	SettingsFile = "settings.json"
 	IndexFile    = "index.json"
 	ChatsDirName = "chats"
+	SessionFile  = "session.json"
 )
 
 // returns the base config root (XDG_CONFIG_HOME or ~/.config).
@@ -54,12 +55,20 @@ func AppDataDir() (string, error) {
 	}
 	return filepath.Join(home, ".local", "share", AppDirName), nil
 }
+func SessionPath() (string, error) {
+	dataDir, err := AppDataDir()
+	if err != nil {
+		return "", fmt.Errorf("resolving app data dir: %w", err)
+	}
+	return filepath.Join(dataDir, SessionFile), nil
+
+}
 
 // returns the full path to the index file (db).
 func IndexPath() (string, error) {
 	dataDir, err := AppDataDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("resolving app data dir: %w", err)
 	}
 	return filepath.Join(dataDir, IndexFile), nil
 }
@@ -68,7 +77,7 @@ func IndexPath() (string, error) {
 func ChatsDir() (string, error) {
 	dataDir, err := AppDataDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("resolving app data dir: %w", err)
 	}
 	return filepath.Join(dataDir, ChatsDirName), nil
 }

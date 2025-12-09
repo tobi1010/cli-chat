@@ -1,8 +1,8 @@
 package api
 
 import (
-	"cli-chat/config"
 	"cli-chat/internal/auth"
+	"cli-chat/session"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,19 +22,19 @@ type ModelsResponse struct {
 	Data   []Model `json:"data"`
 }
 
-func GetModels(ctx context.Context, cfg *config.Config) ([]Model, error) {
-	apiKey, err := auth.ResolveAPIKey(cfg.AppSettings.Provider.Key)
+func GetModels(ctx context.Context, s *session.Session) ([]Model, error) {
+	apiKey, err := auth.ResolveAPIKey(s.Provider.Key)
 	if err != nil {
-		return nil, fmt.Errorf("resloving API key for %s: %w", cfg.AppSettings.Provider, err)
+		return nil, fmt.Errorf("resloving API key for %s: %w", s.Provider, err)
 	}
-	url := cfg.AppSettings.Provider.BaseURL + "models"
+	url := s.Provider.BaseURL + "models"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 
-	res, err := cfg.Client.HttpClient.Do(req)
+	res, err := s.Client.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("doing request to %s: %w", url, err)
 	}

@@ -1,16 +1,16 @@
 package commands
 
 import (
-	"cli-chat/config"
 	"cli-chat/internal/api"
+	"cli-chat/session"
 	"cli-chat/util"
 	"context"
 	"fmt"
 )
 
-func CommandListModels(cfg *config.Config, args []string) error {
+func CommandListModels(s *session.Session, args []string) error {
 	ctx := context.Background()
-	models, err := api.GetModels(ctx, cfg)
+	models, err := api.GetModels(ctx, s)
 	if err != nil {
 		return fmt.Errorf("requesting models: %w", err)
 	}

@@ -1,13 +1,13 @@
 package commands
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 	"fmt"
 )
 
-func CommandSetPrefix(cfg *config.Config, args []string) error {
-	cfg.AppSettings.CommandPrefix = args[0]
-	err := cfg.AppSettings.Save()
+func CommandSetPrefix(s *session.Session, args []string) error {
+	s.AppSettings.CommandPrefix = args[0]
+	err := s.AppSettings.Save()
 	if err != nil {
 		return fmt.Errorf("writingSettings: %w", err)
 	}

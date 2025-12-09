@@ -1,13 +1,13 @@
 package commands
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 )
 
 type CliCommand struct {
 	Name        string
 	Description string
-	Callback    func(*config.Config, []string) error
+	Callback    func(*session.Session, []string) error
 }
 
 func GetCommands() map[string]CliCommand {
