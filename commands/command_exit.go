@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 	"fmt"
 	"os"
 )
 
-func CommandExit(cfg *config.Config, args []string) error {
+func CommandExit(s *session.Session, args []string) error {
 	fmt.Println("Goodbye")
 	os.Exit(0)
 	return fmt.Errorf("Error closing chat!")

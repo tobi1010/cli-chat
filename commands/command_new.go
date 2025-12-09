@@ -1,7 +1,7 @@
 package commands
 
-import "cli-chat/config"
+import "cli-chat/session"
 
-func CommandNew(cfg *config.Config, args []string) error {
+func CommandNew(s *session.Session, args []string) error {
 	return nil
 }

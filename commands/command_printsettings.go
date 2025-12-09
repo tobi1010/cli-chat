@@ -1,12 +1,13 @@
 package commands
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 	"fmt"
 )
 
-func CommandPrintSettings(cfg *config.Config, args []string) error {
-	err := config.PrintSettings()
+func CommandPrintSettings(s *session.Session, args []string) error {
+	set := s.AppSettings
+	err := set.PrintSettings()
 	if err != nil {
 		return fmt.Errorf("printig settings: %w", err)
 	}

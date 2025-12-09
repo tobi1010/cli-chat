@@ -3,7 +3,7 @@ package api
 import (
 	"bufio"
 	"bytes"
-	"cli-chat/config"
+	"cli-chat/session"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -39,13 +39,13 @@ type ResponseCompleted struct {
 	Response       OpenAiResponse `json:"response"`
 }
 
-func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string) (chan string, chan OpenAiResponse, chan error, error) {
+func CreateStreamResponse(ctx context.Context, s *session.Session, input string) (chan string, chan OpenAiResponse, chan error, error) {
 	payload := openAiPayload{
-		Model:  cfg.AppSettings.Model,
+		Model:  s.Model,
 		Input:  input,
 		Stream: true,
 	}
-	stream, err := doStreamRequest(ctx, cfg, payload)
+	stream, err := doStreamRequest(ctx, s, payload)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("making stream request: %w", err)
 	}
@@ -112,12 +112,12 @@ func CreateStreamResponse(ctx context.Context, cfg *config.Config, input string)
 	return outCh, fullCh, errCh, nil
 }
 
-func doStreamRequest(ctx context.Context, cfg *config.Config, payload openAiPayload) (*Stream, error) {
-	apiKey := os.Getenv(cfg.AppSettings.Provider.Key)
+func doStreamRequest(ctx context.Context, s *session.Session, payload openAiPayload) (*Stream, error) {
+	apiKey := os.Getenv(s.Provider.Key)
 	if apiKey == "" {
-		return nil, fmt.Errorf("%s not set", cfg.AppSettings.Provider.Key)
+		return nil, fmt.Errorf("%s not set", s.Provider.Key)
 	}
-	url := cfg.AppSettings.Provider.BaseURL + "responses"
+	url := s.Provider.BaseURL + "responses"
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling json: %w", err)
@@ -130,7 +130,7 @@ func doStreamRequest(ctx context.Context, cfg *config.Config, payload openAiPayl
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/event-stream")
 
-	res, err := cfg.Client.HttpClient.Do(req)
+	res, err := s.Client.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("doing request to %s: %w", url, err)
 	}

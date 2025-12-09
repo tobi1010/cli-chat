@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 	"fmt"
 	"strconv"
 )
 
-func CommandSetColumns(cfg *config.Config, args []string) error {
+func CommandSetColumns(s *session.Session, args []string) error {
 	length, err := strconv.Atoi(args[0])
 	if err != nil {
 		fmt.Println("argument must be a number!")
@@ -15,8 +15,8 @@ func CommandSetColumns(cfg *config.Config, args []string) error {
 		fmt.Println("please set cloums to a value > 5")
 		return nil
 	}
-	cfg.AppSettings.Columns = length
-	err = cfg.AppSettings.Save()
+	s.AppSettings.Columns = length
+	err = s.AppSettings.Save()
 	if err != nil {
 		return fmt.Errorf("writing settings: %w", err)
 	}

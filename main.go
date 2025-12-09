@@ -1,25 +1,19 @@
 package main
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 	"log"
 	"os"
 )
 
 func main() {
-	settings, settingsPath, err := config.EnsureSettings()
+	s, err := session.LoadOrCreate()
 	if err != nil {
-		log.Printf("initializing default settings: %v", err)
+		log.Printf("creating session: %v", err)
 		os.Exit(1)
 	}
 
-	cfg, err := config.New(settingsPath, &settings)
-	if err != nil {
-		log.Printf("creating config: %v", err)
-		os.Exit(1)
-	}
-
-	err = startRepl(cfg)
+	err = startRepl(s)
 	if err != nil {
 		log.Printf("repl: %v", err)
 		os.Exit(1)

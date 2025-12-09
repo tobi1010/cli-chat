@@ -1,10 +1,11 @@
 package index
 
-import "time"
+import (
+	"time"
+)
 
 type DB struct {
-	LastChatID string
-	Chats      []ChatMeta
+	Chats []ChatMeta
 }
 
 type ChatMeta struct {

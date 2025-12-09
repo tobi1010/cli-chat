@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"cli-chat/fileatomic"
@@ -7,15 +7,46 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
-func PrintSettings() error {
-	s, err := ReadSettings()
+func (s *Settings) PrintSettings() error {
+	b, err := json.Marshal(s)
 	if err != nil {
-		return fmt.Errorf("reading settings: %w", err)
+		return fmt.Errorf("marshal settings: %w", err)
 	}
-	b, _ := json.MarshalIndent(s, "", "  ")
-	fmt.Println(string(b))
+	var settingsMap map[string]any
+	if err := json.Unmarshal(b, &settingsMap); err != nil {
+		return fmt.Errorf("unmarshal to map: %w", err)
+	}
+
+	// Stable order
+	keys := make([]string, 0, len(settingsMap))
+	maxKeyLen := 0
+	for k := range settingsMap {
+		if len(k) > maxKeyLen {
+			maxKeyLen = len(k)
+		}
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pad := maxKeyLen + 3
+
+	fmt.Println("Settings:")
+	for _, k := range keys {
+		v := settingsMap[k]
+		// redact obvious secrets
+		switch k {
+		case "api_key", "token", "password", "secret":
+			if vs, ok := v.(string); ok && vs != "" {
+				fmt.Printf("  %-*s [set]\n", pad, k)
+			} else {
+				fmt.Printf("  %-*s [empty]\n", pad, k)
+			}
+			continue
+		}
+		fmt.Printf("  %-*s %v\n", pad, k, v)
+	}
 	return nil
 }
 

@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"cli-chat/config"
+	"cli-chat/session"
 )
 
-func CommandUsage(cfg *config.Config, args []string) error {
+func CommandUsage(s *session.Session, args []string) error {
 	return nil
 }

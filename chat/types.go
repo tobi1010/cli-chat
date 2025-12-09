@@ -15,18 +15,14 @@ type Chat struct {
 	ID           string    `json:"id"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
-	Provider     string    `json:"provider"`
-	Model        string    `json:"model"`
 	Conversation []Message `json:"conversation"`
 }
 
-func New(providerName string, modelName string) *Chat {
+func New() *Chat {
 	return &Chat{
 		ID:           uuid.NewString(),
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
-		Provider:     providerName,
-		Model:        modelName,
 		Conversation: make([]Message, 0, 20),
 	}
 }

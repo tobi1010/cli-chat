@@ -1,4 +1,4 @@
-package config
+package settings
 
 import (
 	"cli-chat/fileatomic"
@@ -12,7 +12,7 @@ import (
 
 // EnsureSettings loads settings if present; otherwise creates defaults and writes them.
 // Order: XDG_CONFIG_HOME -> $HOME/.config. No fallback to PWD.
-func EnsureSettings() (Settings, string, error) {
+func EnsureSettings() (Settings, error) {
 	f, err := paths.SettingsPath()
 	dir := filepath.Dir(f)
 
@@ -21,29 +21,29 @@ func EnsureSettings() (Settings, string, error) {
 	if err == nil {
 		var s Settings
 		if uerr := json.Unmarshal(data, &s); uerr != nil {
-			return Settings{}, "", fmt.Errorf("unmarshal %s: %w", f, uerr)
+			return Settings{}, fmt.Errorf("unmarshal %s: %w", f, uerr)
 		}
-		return s, dir, nil
+		return s, nil
 	}
 	if !errors.Is(err, os.ErrNotExist) {
-		return Settings{}, "", fmt.Errorf("read %s: %w", f, err)
+		return Settings{}, fmt.Errorf("read %s: %w", f, err)
 	}
 
 	// Not found: create dir and write defaults
 	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return Settings{}, "", fmt.Errorf("mkdir %s: %w", dir, err)
+		return Settings{}, fmt.Errorf("mkdir %s: %w", dir, err)
 	}
 
-	settings := NewDefaultSettings()
-	encoded, err := json.MarshalIndent(settings, "", "  ")
+	defSettings := NewDefaultSettings()
+	encoded, err := json.MarshalIndent(defSettings, "", "  ")
 	if err != nil {
-		return Settings{}, "", fmt.Errorf("marshal defaults: %w", err)
+		return Settings{}, fmt.Errorf("marshal defaults: %w", err)
 	}
 
 	err = fileatomic.Write(f, encoded, 0o600)
 	if err != nil {
-		return Settings{}, "", fmt.Errorf("write %s: %w", f, err)
+		return Settings{}, fmt.Errorf("write %s: %w", f, err)
 	}
 
-	return settings, dir, nil
+	return defSettings, nil
 }
