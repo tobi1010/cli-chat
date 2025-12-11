@@ -5,7 +5,17 @@ import (
 )
 
 type DB struct {
-	Chats []ChatMeta
+	Chats     []ChatMeta
+	ChatsDir  string
+	IndexPath string
+}
+
+func NewDB(indexPath string, chatsDir string) (*DB, error) {
+	return &DB{
+		Chats:     []ChatMeta{},
+		ChatsDir:  chatsDir,
+		IndexPath: indexPath,
+	}, nil
 }
 
 type ChatMeta struct {

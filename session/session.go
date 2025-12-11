@@ -40,7 +40,11 @@ func NewDefaultSession() (*Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolving index path: %w", err)
 	}
-	s.DB, err = index.Load(indexPath)
+	chatsDir, err := paths.ChatsDir()
+	if err != nil {
+		return nil, fmt.Errorf("resolving chats dir: %w", err)
+	}
+	s.DB, err = index.NewDB(indexPath, chatsDir)
 	if err != nil {
 		return nil, fmt.Errorf("loading db: %w", err)
 	}
