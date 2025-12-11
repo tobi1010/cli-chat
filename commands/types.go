@@ -62,5 +62,10 @@ func GetCommands() map[string]CliCommand {
 			Description: "print help",
 			Callback:    CommandHelp,
 		},
+		"new": {
+			Name:        "new",
+			Description: "start new chat",
+			Callback:    CommandNew,
+		},
 	}
 }

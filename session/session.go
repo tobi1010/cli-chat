@@ -6,6 +6,7 @@ import (
 	"cli-chat/index"
 	"cli-chat/internal/client"
 	"cli-chat/paths"
+	"cli-chat/providers"
 	"cli-chat/settings"
 	"encoding/json"
 	"errors"
@@ -15,20 +16,13 @@ import (
 )
 
 type PersistedState struct {
-	LastChatId   string   `json:"lastChatId"`
-	LastProvider Provider `json:"lastProvider"`
-	LastModel    string   `json:"lastModel"`
-}
-
-type Provider struct {
-	Name    string `json:"name"`
-	Key     string `json:"key"`
-	BaseURL string `json:"baseurl"`
+	LastChatId   string             `json:"lastChatId"`
+	LastProvider providers.Provider `json:"lastProvider"`
+	LastModel    string             `json:"lastModel"`
 }
 
 type Session struct {
-	Provider    Provider
-	Model       string
+	Provider    providers.Provider
 	Chat        *chat.Chat
 	Client      *client.Client
 	AppSettings settings.Settings
@@ -36,18 +30,12 @@ type Session struct {
 }
 
 func NewDefaultSession() (*Session, error) {
-	s := Session{
-		Provider: Provider{
-			Name:    "openai",
-			Key:     "OPENAI_API_KEY",
-			BaseURL: "https://api.openai.com/v1/",
-		},
-		Model: "gpt-5",
-	}
-	settings := settings.NewDefaultSettings()
-	s.AppSettings = settings
-	s.Client = client.New(time.Duration(settings.Timeout) * time.Second)
+	s := Session{}
+	s.Provider = providers.NewDefault()
+	s.AppSettings = settings.NewDefaultSettings()
+	s.Client = client.New(time.Duration(s.AppSettings.Timeout) * time.Second)
 	s.Chat = chat.New()
+
 	indexPath, err := paths.IndexPath()
 	if err != nil {
 		return nil, fmt.Errorf("resolving index path: %w", err)
@@ -56,6 +44,7 @@ func NewDefaultSession() (*Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading db: %w", err)
 	}
+
 	return &s, nil
 }
 
@@ -104,7 +93,7 @@ func LoadOrCreate(sessionPath string) (*Session, error) {
 	}
 	s.Provider = state.LastProvider
 	if state.LastModel != "" {
-		s.Model = state.LastModel
+		s.Provider.Model = state.LastModel
 	}
 	return s, nil
 }
@@ -113,7 +102,7 @@ func (s *Session) Save(sessionPath string) error {
 	st := PersistedState{
 		LastChatId:   s.Chat.ID,
 		LastProvider: s.Provider,
-		LastModel:    s.Model,
+		LastModel:    s.Provider.Model,
 	}
 	data, err := json.Marshal(st)
 	if err != nil {

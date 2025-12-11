@@ -15,7 +15,7 @@ func startRepl(s *session.Session) error {
 	cmds := commands.GetCommands()
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Printf("%s>", s.Model)
+		fmt.Printf("%s>", s.Provider.Model)
 		scanner.Scan()
 
 		text := strings.TrimSpace(scanner.Text())
@@ -33,6 +33,8 @@ func startRepl(s *session.Session) error {
 				if err != nil {
 					return fmt.Errorf("Error executing command: %w", err)
 				}
+			} else {
+				fmt.Printf("unknown command: %sp\n", tokens[0])
 			}
 
 		} else {
@@ -41,6 +43,7 @@ func startRepl(s *session.Session) error {
 			if err != nil {
 				return fmt.Errorf("recieving stream : %w", err)
 			}
+			s.Chat.AddMessage("user", text)
 			var acc strings.Builder
 			lineLength := 0
 			streamOpen := true
@@ -67,7 +70,20 @@ func startRepl(s *session.Session) error {
 						return fmt.Errorf("stream error: %w", err)
 					}
 				case fullResponse, ok := <-fullCh:
+					outputText := ""
+					role := ""
 					if ok {
+						for i := range fullResponse.Output {
+							if fullResponse.Output[i].Role != "" {
+								role = fullResponse.Output[i].Role
+							}
+							for j := range fullResponse.Output[i].Content {
+								outputText = outputText + fullResponse.Output[i].Content[j].Text
+							}
+						}
+
+						s.Chat.AddMessage(role, outputText)
+						fmt.Printf("%v", s.Chat.Conversation)
 						_ = fullResponse
 					}
 				}

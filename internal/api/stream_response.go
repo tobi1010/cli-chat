@@ -41,7 +41,7 @@ type ResponseCompleted struct {
 
 func CreateStreamResponse(ctx context.Context, s *session.Session, input string) (chan string, chan OpenAiResponse, chan error, error) {
 	payload := openAiPayload{
-		Model:  s.Model,
+		Model:  s.Provider.Model,
 		Input:  input,
 		Stream: true,
 	}
