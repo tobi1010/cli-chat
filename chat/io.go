@@ -2,7 +2,6 @@ package chat
 
 import (
 	"cli-chat/fileatomic"
-	"cli-chat/paths"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -19,15 +18,11 @@ func (c *Chat) AddMessage(role string, content string) {
 	c.UpdatedAt = time.Now()
 }
 
-func (c *Chat) Write() error {
-	dir, err := paths.ChatsDir()
-	if err != nil {
-		return fmt.Errorf("resolving chats dir: %w", err)
-	}
+func (c *Chat) Write(chatsDir string) error {
 
-	path := filepath.Join(dir, c.ID+".json")
+	path := filepath.Join(chatsDir, c.ID+".json")
 
-	err = os.MkdirAll(dir, 0o700)
+	err := os.MkdirAll(chatsDir, 0o700)
 	if err != nil {
 		return fmt.Errorf("creating chat dir: %w", err)
 	}
@@ -43,13 +38,9 @@ func (c *Chat) Write() error {
 	return nil
 }
 
-func ReadChat(id string) (*Chat, error) {
-	dir, err := paths.ChatsDir()
-	if err != nil {
-		return nil, fmt.Errorf("resolving chats dir: %w", err)
-	}
+func ReadChat(chatsDir string, id string) (*Chat, error) {
 
-	path := filepath.Join(dir, id+".json")
+	path := filepath.Join(chatsDir, id+".json")
 
 	data, err := os.ReadFile(path)
 	if err != nil {

@@ -2,7 +2,6 @@ package settings
 
 import (
 	"cli-chat/fileatomic"
-	"cli-chat/paths"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -50,12 +49,8 @@ func (s *Settings) PrintSettings() error {
 	return nil
 }
 
-func ReadSettings() (*Settings, error) {
-	f, err := paths.SettingsPath()
-	if err != nil {
-		return nil, fmt.Errorf("resolving settings path: %w", err)
-	}
-	data, err := os.ReadFile(f)
+func ReadSettings(settingsPath string) (*Settings, error) {
+	data, err := os.ReadFile(settingsPath)
 	var settings Settings
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -71,13 +66,9 @@ func ReadSettings() (*Settings, error) {
 	return &settings, nil
 }
 
-func (s *Settings) Save() error {
-	path, err := paths.SettingsPath()
-	if err != nil {
-		return fmt.Errorf("resolving settings path: %w", err)
-	}
-	dir := filepath.Dir(path)
-	err = os.MkdirAll(dir, 0o700)
+func (s *Settings) Save(settingsPath string) error {
+	dir := filepath.Dir(settingsPath)
+	err := os.MkdirAll(dir, 0o700)
 	if err != nil {
 		return fmt.Errorf("creating settings dir: %w", err)
 	}
@@ -85,7 +76,7 @@ func (s *Settings) Save() error {
 	if err != nil {
 		return fmt.Errorf("marshalling config: %w", err)
 	}
-	err = fileatomic.Write(path, data, 0o600)
+	err = fileatomic.Write(settingsPath, data, 0o600)
 	if err != nil {
 		return fmt.Errorf("writing settings: %w", err)
 	}

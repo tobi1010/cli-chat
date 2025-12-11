@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"cli-chat/paths"
 	"cli-chat/session"
 	"fmt"
 	"strconv"
@@ -16,7 +17,11 @@ func CommandSetColumns(s *session.Session, args []string) error {
 		return nil
 	}
 	s.AppSettings.Columns = length
-	err = s.AppSettings.Save()
+	settingsPath, err := paths.SettingsPath()
+	if err != nil {
+		return fmt.Errorf("resolving session path: %w", err)
+	}
+	err = s.AppSettings.Save(settingsPath)
 	if err != nil {
 		return fmt.Errorf("writing settings: %w", err)
 	}

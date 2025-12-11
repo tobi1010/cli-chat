@@ -1,13 +1,15 @@
 package main
 
 import (
+	"cli-chat/paths"
 	"cli-chat/session"
 	"log"
 	"os"
 )
 
 func main() {
-	s, err := session.LoadOrCreate()
+	sessionPath, err := paths.SessionPath()
+	s, err := session.LoadOrCreate(sessionPath)
 	if err != nil {
 		log.Printf("creating session: %v", err)
 		os.Exit(1)
