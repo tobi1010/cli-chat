@@ -22,16 +22,14 @@ func (c *Chat) Write(chatsDir string) error {
 
 	path := filepath.Join(chatsDir, c.ID+".json")
 
-	err := os.MkdirAll(chatsDir, 0o700)
-	if err != nil {
+	if err := os.MkdirAll(chatsDir, 0o700); err != nil {
 		return fmt.Errorf("creating chat dir: %w", err)
 	}
 	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
 	}
-	err = fileatomic.Write(path, data, 0o600)
-	if err != nil {
+	if err = fileatomic.Write(path, data, 0o600); err != nil {
 		return fmt.Errorf("writing chat atomically: %w", err)
 	}
 
@@ -47,8 +45,7 @@ func ReadChat(chatsDir string, id string) (*Chat, error) {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
 	var chat Chat
-	err = json.Unmarshal(data, &chat)
-	if err != nil {
+	if err = json.Unmarshal(data, &chat); err != nil {
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 

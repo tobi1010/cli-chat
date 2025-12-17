@@ -8,33 +8,41 @@ import (
 
 func Write(path string, data []byte, perm os.FileMode) error {
 	dir := filepath.Dir(path)
-	err := os.MkdirAll(dir, 0o700)
-	if err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("creating dir %s: %w", dir, err)
 	}
-	tmp := path + ".tmp"
-	fd, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, perm)
+	base := filepath.Base(path)
+	f, err := os.CreateTemp(dir, base+".tmp-*")
 	if err != nil {
-		return fmt.Errorf("opening file %s: %w", tmp, err)
+		return fmt.Errorf("creating temp file in %s: %w", dir, err)
 	}
-	_, err = fd.Write(data)
-	if err != nil {
-		_ = fd.Close()
+	tmp := f.Name()
+	defer func() {
+		_ = f.Close()
+		_ = os.Remove(tmp)
+	}()
+
+	if err = f.Chmod(perm); err != nil {
+		return fmt.Errorf("chmod temp file %s: %w", tmp, err)
+	}
+
+	if _, err = f.Write(data); err != nil {
 		return fmt.Errorf("writing data to %s: %w", tmp, err)
 	}
-	err = fd.Sync()
-	if err != nil {
-		_ = fd.Close()
+	if err = f.Sync(); err != nil {
 		return fmt.Errorf("syncing file: %w", err)
 	}
-	err = fd.Close()
-	if err != nil {
+	if err = f.Close(); err != nil {
 		return fmt.Errorf("closing file %s: %w", tmp, err)
 	}
-	err = os.Rename(tmp, path)
-	if err != nil {
-		_ = os.Remove(tmp)
+	if err = os.Rename(tmp, path); err != nil {
 		return fmt.Errorf("renaming file %s: %w", path, err)
 	}
+
+	if d, err := os.Open(dir); err == nil {
+		_ = d.Sync()
+		_ = d.Close()
+	}
+
 	return nil
 }

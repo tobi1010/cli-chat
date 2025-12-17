@@ -48,8 +48,7 @@ func GetModels(ctx context.Context, s *session.Session) ([]Model, error) {
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}
 	var modelsRes ModelsResponse
-	err = json.Unmarshal(data, &modelsRes)
-	if err != nil {
+	if err = json.Unmarshal(data, &modelsRes); err != nil {
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 	models := modelsRes.Data

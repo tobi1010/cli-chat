@@ -18,8 +18,7 @@ func Load(path string) (*DB, error) {
 		return nil, fmt.Errorf("reading file %s: %w", path, err)
 	}
 	var db DB
-	err = json.Unmarshal(data, &db)
-	if err != nil {
+	if err = json.Unmarshal(data, &db); err != nil {
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 	return &db, nil
@@ -29,8 +28,7 @@ func (db *DB) Save(path string) error {
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
 	}
-	err = fileatomic.Write(path, data, 0o600)
-	if err != nil {
+	if err = fileatomic.Write(path, data, 0o600); err != nil {
 		return fmt.Errorf("writing atomically file %s: %w", path, err)
 	}
 	return nil

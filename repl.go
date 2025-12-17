@@ -29,8 +29,7 @@ func startRepl(s *session.Session) error {
 			tokens := strings.Fields(lowerText)
 
 			if command, found := cmds[tokens[0]]; found {
-				err := command.Callback(s, tokens[1:])
-				if err != nil {
+				if err := command.Callback(s, tokens[1:]); err != nil {
 					return fmt.Errorf("Error executing command: %w", err)
 				}
 			} else {

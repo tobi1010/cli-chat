@@ -21,8 +21,7 @@ func CommandSetColumns(s *session.Session, args []string) error {
 	if err != nil {
 		return fmt.Errorf("resolving session path: %w", err)
 	}
-	err = s.AppSettings.Save(settingsPath)
-	if err != nil {
+	if err = s.AppSettings.Save(settingsPath); err != nil {
 		return fmt.Errorf("writing settings: %w", err)
 	}
 	return nil

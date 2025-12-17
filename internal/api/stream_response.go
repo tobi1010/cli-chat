@@ -76,12 +76,14 @@ func CreateStreamResponse(ctx context.Context, s *session.Session, input string)
 				if bytes.HasPrefix(line, []byte("data:")) {
 					payload := bytes.TrimSpace(bytes.TrimPrefix(line, []byte("data:")))
 					var eventHeader EventHeader
-					err = json.Unmarshal(payload, &eventHeader)
+					if err = json.Unmarshal(payload, &eventHeader); err != nil {
+						errCh <- fmt.Errorf("unmarshalling json: %w", err)
+					}
+
 					switch eventHeader.Type {
 					case "response.output_text.delta":
 						var delta Delta
-						err = json.Unmarshal(payload, &delta)
-						if err != nil {
+						if err = json.Unmarshal(payload, &delta); err != nil {
 							errCh <- fmt.Errorf("unmarshalling json: %w", err)
 							return
 						}
@@ -89,8 +91,7 @@ func CreateStreamResponse(ctx context.Context, s *session.Session, input string)
 
 					case "response.completed":
 						var resCompletedEvent ResponseCompleted
-						err = json.Unmarshal(payload, &resCompletedEvent)
-						if err != nil {
+						if err = json.Unmarshal(payload, &resCompletedEvent); err != nil {
 							errCh <- fmt.Errorf("unmarshalling json: %w", err)
 							return
 						}

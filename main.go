@@ -17,8 +17,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = startRepl(s)
-	if err != nil {
+	if err = startRepl(s); err != nil {
 		log.Printf("repl: %v", err)
 		os.Exit(1)
 	}

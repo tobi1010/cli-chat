@@ -74,7 +74,9 @@ func LoadOrCreate(sessionPath string) (*Session, error) {
 		return nil, fmt.Errorf("reading session file %s: %w", sessionPath, err)
 	}
 	var state PersistedState
-	_ = json.Unmarshal(data, &state)
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, fmt.Errorf("unmarshalling state: %w", err)
+	}
 	if state.LastChatId == "" {
 		s.Chat = chat.New()
 	} else {
@@ -112,8 +114,7 @@ func (s *Session) Save(sessionPath string) error {
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
 	}
-	err = fileatomic.Write(sessionPath, data, 0o600)
-	if err != nil {
+	if err = fileatomic.Write(sessionPath, data, 0o600); err != nil {
 		return fmt.Errorf("writing file atomically %s: %w", sessionPath, err)
 	}
 

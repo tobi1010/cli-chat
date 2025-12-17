@@ -59,8 +59,7 @@ func ReadSettings(settingsPath string) (*Settings, error) {
 		}
 		return nil, fmt.Errorf("reading config file: %w", err)
 	}
-	err = json.Unmarshal(data, &settings)
-	if err != nil {
+	if err = json.Unmarshal(data, &settings); err != nil {
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 	return &settings, nil
@@ -68,16 +67,14 @@ func ReadSettings(settingsPath string) (*Settings, error) {
 
 func (s *Settings) Save(settingsPath string) error {
 	dir := filepath.Dir(settingsPath)
-	err := os.MkdirAll(dir, 0o700)
-	if err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("creating settings dir: %w", err)
 	}
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling config: %w", err)
 	}
-	err = fileatomic.Write(settingsPath, data, 0o600)
-	if err != nil {
+	if err = fileatomic.Write(settingsPath, data, 0o600); err != nil {
 		return fmt.Errorf("writing settings: %w", err)
 	}
 	return nil

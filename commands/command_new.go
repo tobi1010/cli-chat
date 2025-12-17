@@ -13,8 +13,7 @@ func CommandNew(s *session.Session, args []string) error {
 		return fmt.Errorf("resolving session path: %w", err)
 	}
 	s.Chat = chat.New()
-	err = s.Save(sessionPath)
-	if err != nil {
+	if err = s.Save(sessionPath); err != nil {
 		return fmt.Errorf("saving session: %w", err)
 	}
 	return nil

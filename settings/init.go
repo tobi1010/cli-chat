@@ -20,8 +20,8 @@ func EnsureSettings() (Settings, error) {
 	data, err := os.ReadFile(f)
 	if err == nil {
 		var s Settings
-		if uerr := json.Unmarshal(data, &s); uerr != nil {
-			return Settings{}, fmt.Errorf("unmarshal %s: %w", f, uerr)
+		if err := json.Unmarshal(data, &s); err != nil {
+			return Settings{}, fmt.Errorf("unmarshal %s: %w", f, err)
 		}
 		return s, nil
 	}
@@ -40,8 +40,7 @@ func EnsureSettings() (Settings, error) {
 		return Settings{}, fmt.Errorf("marshal defaults: %w", err)
 	}
 
-	err = fileatomic.Write(f, encoded, 0o600)
-	if err != nil {
+	if err = fileatomic.Write(f, encoded, 0o600); err != nil {
 		return Settings{}, fmt.Errorf("write %s: %w", f, err)
 	}
 

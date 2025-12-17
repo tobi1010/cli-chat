@@ -12,8 +12,7 @@ func CommandSetPrefix(s *session.Session, args []string) error {
 	if err != nil {
 		return fmt.Errorf("resolving settings path: %w", err)
 	}
-	err = s.AppSettings.Save(settingsPath)
-	if err != nil {
+	if err = s.AppSettings.Save(settingsPath); err != nil {
 		return fmt.Errorf("writingSettings: %w", err)
 	}
 	return nil
