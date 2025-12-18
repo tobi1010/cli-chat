@@ -22,9 +22,6 @@ func (c *Chat) Write(chatsDir string) error {
 
 	path := filepath.Join(chatsDir, c.ID+".json")
 
-	if err := os.MkdirAll(chatsDir, 0o700); err != nil {
-		return fmt.Errorf("creating chat dir: %w", err)
-	}
 	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
@@ -36,13 +33,13 @@ func (c *Chat) Write(chatsDir string) error {
 	return nil
 }
 
-func ReadChat(chatsDir string, id string) (*Chat, error) {
+func LoadChat(chatsDir string, id string) (*Chat, error) {
 
 	path := filepath.Join(chatsDir, id+".json")
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading file: %w", err)
+		return nil, fmt.Errorf("reading file %s: %w", path, err)
 	}
 	var chat Chat
 	if err = json.Unmarshal(data, &chat); err != nil {

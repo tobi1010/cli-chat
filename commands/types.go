@@ -67,5 +67,10 @@ func GetCommands() map[string]CliCommand {
 			Description: "start new chat",
 			Callback:    CommandNew,
 		},
+		"set-apikey": {
+			Name:        "set-apikey",
+			Description: "set api key for provider",
+			Callback:    CommandSetApiKey,
+		},
 	}
 }
