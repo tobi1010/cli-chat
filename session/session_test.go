@@ -1,71 +1,196 @@
 package session
 
 import (
+	"cli-chat/chat"
+	"cli-chat/fileatomic"
+	"cli-chat/index"
 	"cli-chat/paths"
+	"cli-chat/providers"
+	"cli-chat/settings"
+	"encoding/json"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestLoadOrCreate(t *testing.T) {
-	tests := []struct {
-		name string
-		init func(t *testing.T)
-	}{
-		{name: "first run, no session, settings or db",
-			init: func(t *testing.T) {
-				t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-				t.Setenv("XDG_DATA_HOME", t.TempDir())
-			},
+type fixture struct {
+	sessionPath  string
+	settingsPath string
+	indexPath    string
+
+	wroteState    State
+	wroteSettings settings.Settings
+	created       time.Time
+	updated       time.Time
+}
+type Opts struct {
+	writeChat1 bool
+	writeChat2 bool
+	LastChatId string
+}
+
+func initFirstRun(t *testing.T) fixture {
+	t.Helper()
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+
+	sessionPath, err := paths.SessionPath()
+	require.NoError(t, err)
+	settingsPath, err := paths.SettingsPath()
+	require.NoError(t, err)
+	indexPath, err := paths.IndexPath()
+	require.NoError(t, err)
+
+	return fixture{
+		sessionPath:  sessionPath,
+		settingsPath: settingsPath,
+		indexPath:    indexPath,
+	}
+}
+
+func initWithExistingFiles(t *testing.T, opt Opts) fixture {
+	t.Helper()
+
+	fx := initFirstRun(t)
+
+	set := settings.Settings{
+		CommandPrefix: "This",
+		Timeout:       15,
+		Columns:       4,
+		ApiKey:        "TEST",
+	}
+	data, err := json.MarshalIndent(set, "", "  ")
+	require.NoError(t, err)
+	require.NoError(t, fileatomic.Write(fx.settingsPath, data, 0o600))
+
+	st := State{
+		LastChatId: opt.LastChatId,
+		LastProvider: providers.Provider{
+			Name:    "yet",
+			Key:     "ANOTHER",
+			BaseURL: "test",
+			Model:   "succeeds",
+		},
+	}
+	data, err = json.MarshalIndent(st, "", "  ")
+	require.NoError(t, err)
+	require.NoError(t, fileatomic.Write(fx.sessionPath, data, 0o600))
+
+	chatsDir, err := paths.ChatsDir()
+	require.NoError(t, err)
+
+	created := time.Date(2025, 1, 2, 3, 4, 5, 6, time.UTC)
+	updated := created.Add(10 * time.Minute)
+
+	db := index.DB{
+		Chats: []index.ChatMeta{
+			{ID: "1", CreatedAt: created, UpdatedAt: updated},
+			{ID: "2", CreatedAt: created, UpdatedAt: updated},
+		},
+		ChatsDir:  chatsDir,
+		IndexPath: fx.indexPath,
+	}
+	require.NoError(t, db.Save(fx.indexPath))
+
+	chat1 := chat.Chat{
+		ID:        "1",
+		CreatedAt: created,
+		UpdatedAt: updated,
+		Conversation: []chat.Message{
+			{Role: "user", Content: "dumb question"},
+			{Role: "assistant", Content: "assertive answer"},
+		},
+	}
+	chat2 := chat.Chat{
+		ID:        "2",
+		CreatedAt: created,
+		UpdatedAt: updated,
+		Conversation: []chat.Message{
+			{Role: "user", Content: "dumber question"},
+			{Role: "assistant", Content: "eagerly assertive answer"},
 		},
 	}
 
-	for _, tc := range tests {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			tc.init(t)
-			sessionPath, err := paths.SessionPath()
-			if err != nil {
-				t.Fatalf("resolving session path: %v", err)
-			}
-			s, err := LoadOrCreate(sessionPath)
-			if err != nil {
-				t.Fatalf("LoadOrCreate session: %v", err)
-			}
-
-			if s.Client == nil {
-				t.Fatalf("expected non-nil client")
-			}
-			if s.Chat == nil {
-				t.Fatalf("expected non-nil chat")
-			}
-			if s.DB == nil {
-				t.Fatalf("expected non-nil db")
-			}
-
-			settingsPath, err := paths.SettingsPath()
-			if err != nil {
-				t.Fatalf("resolving settings path: %v", err)
-			}
-			if _, err := os.Stat(settingsPath); err != nil {
-				t.Fatalf("expected settings file to exist at %s: %v", settingsPath, err)
-			}
-
-			if _, err := os.Stat(sessionPath); err == nil {
-				t.Fatalf("expected session file to not exist at %s", sessionPath)
-			} else if !os.IsNotExist(err) {
-				t.Fatalf("stat %s: %v", sessionPath, err)
-			}
-
-			dbFilePath, err := paths.IndexPath()
-			if err != nil {
-				t.Fatalf("resolving index file path: %v", err)
-			}
-			if _, err := os.Stat(dbFilePath); err == nil {
-				t.Fatalf("expected index file to not exist at %s", dbFilePath)
-			} else if !os.IsNotExist(err) {
-				t.Fatalf("stat %s: %v", dbFilePath, err)
-			}
-
-		})
+	if opt.writeChat1 {
+		require.NoError(t, chat1.Write(chatsDir))
 	}
+	if opt.writeChat2 {
+		require.NoError(t, chat2.Write(chatsDir))
+	}
+
+	fx.wroteSettings = set
+	fx.wroteState = st
+	fx.created = created
+	fx.updated = updated
+	return fx
+}
+
+func TestLoadOrCreate_FirstRun(t *testing.T) {
+	fx := initFirstRun(t)
+
+	s, err := LoadOrCreate(fx.sessionPath)
+	require.NoError(t, err)
+
+	require.NotNil(t, s.Client)
+	require.NotNil(t, s.Chat)
+	require.NotNil(t, s.DB)
+
+	_, err = os.Stat(fx.settingsPath)
+	require.NoError(t, err)
+
+	_, err = os.Stat(fx.sessionPath)
+	require.ErrorIs(t, err, os.ErrNotExist)
+
+	_, err = os.Stat(fx.indexPath)
+	require.ErrorIs(t, err, os.ErrNotExist)
+}
+
+func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
+	fx := initWithExistingFiles(t, Opts{true, true, "1"})
+
+	s, err := LoadOrCreate(fx.sessionPath)
+	require.NoError(t, err)
+
+	require.NotNil(t, s.Client)
+	require.NotNil(t, s.Chat)
+	require.NotNil(t, s.DB)
+
+	require.Equal(t, fx.wroteState.LastChatId, s.Chat.ID)
+	require.Equal(t, fx.wroteState.LastProvider, s.Provider)
+
+	require.Equal(t, fx.wroteSettings, s.AppSettings)
+
+	require.Len(t, s.Chat.Conversation, 2)
+	require.Equal(t, "user", s.Chat.Conversation[0].Role)
+	require.Equal(t, "dumb question", s.Chat.Conversation[0].Content)
+	require.Equal(t, "assistant", s.Chat.Conversation[1].Role)
+	require.Equal(t, "assertive answer", s.Chat.Conversation[1].Content)
+	require.True(t, s.Chat.CreatedAt.Equal(fx.created))
+	require.True(t, s.Chat.UpdatedAt.Equal(fx.updated))
+
+	require.Len(t, s.DB.Chats, 2)
+	var have1, have2 bool
+	for _, m := range s.DB.Chats {
+		switch m.ID {
+		case "1":
+			have1 = true
+			require.True(t, m.CreatedAt.Equal(fx.created))
+			require.True(t, m.UpdatedAt.Equal(fx.updated))
+		case "2":
+			have2 = true
+			require.True(t, m.CreatedAt.Equal(fx.created))
+			require.True(t, m.UpdatedAt.Equal(fx.updated))
+		}
+	}
+	require.True(t, have1, "db should contain chat meta id=1")
+	require.True(t, have2, "db should contain chat meta id=2")
+}
+
+func TestLoadOrCreate_ChatMissing(t *testing.T) {
+	fx := initWithExistingFiles(t, Opts{false, true, "1"})
+	_, err := LoadOrCreate(fx.sessionPath)
+	require.Error(t, err)
 }

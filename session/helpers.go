@@ -40,7 +40,7 @@ func loadState(path string) (State, bool, error) {
 	if err := json.Unmarshal(data, &state); err != nil {
 		return State{}, false, fmt.Errorf("unmarshalling state: %w", err)
 	}
-	return State{}, true, nil
+	return state, true, nil
 
 }
 
@@ -55,8 +55,7 @@ func (s *Session) loadChat(chatId string) error {
 	}
 	c, err := chat.LoadChat(chatsDir, chatId)
 	if err != nil {
-		s.Chat = chat.New()
-		return nil
+		return fmt.Errorf("load chat %q: %w", chatId, err)
 	}
 	s.Chat = c
 	return nil

@@ -29,11 +29,12 @@ func LoadOrCreate(sessionPath string) (*Session, error) {
 	}
 	s.applySavedState(state)
 
-	if err := s.loadChat(state.LastChatId); err != nil {
-		return nil, fmt.Errorf("loading chat: %w", err)
-	}
 	if err := s.loadDb(); err != nil {
 		return nil, fmt.Errorf("loading database: %w", err)
+	}
+
+	if err := s.loadChat(state.LastChatId); err != nil {
+		return nil, fmt.Errorf("loading chat: %w", err)
 	}
 
 	return s, nil
