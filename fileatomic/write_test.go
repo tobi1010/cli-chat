@@ -1,8 +1,8 @@
 package fileatomic
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"sync"
@@ -12,43 +12,32 @@ import (
 func readFile(t *testing.T, fp string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(fp)
-	if err != nil {
-		t.Fatalf("reading file %s: %v", fp, err)
-	}
+	require.NoError(t, err)
 	return data
 }
 
 func TestWrite(t *testing.T) {
 	tmpDir := t.TempDir()
-	fp := filepath.Join(tmpDir, "testfile.txt")
+	fp := filepath.Join(tmpDir, "file.txt")
 	data := []byte("Hello amazing world of atomic file writing!")
 	perm := os.FileMode(0o644)
 
-	if err := Write(fp, data, perm); err != nil {
-		t.Fatalf("writing file: %v", err)
-	}
+	err := Write(fp, data, perm)
+	require.NoError(t, err)
 
 	info, err := os.Stat(fp)
-	if err != nil {
-		t.Fatalf("stat: %v", err)
-	}
+	require.NoError(t, err)
 
-	if tmpFilePerm := info.Mode().Perm(); tmpFilePerm != perm {
-		t.Fatalf("permissions mismatch. want: %o, got: %o", perm, tmpFilePerm)
-	}
+	tmpFilePerm := info.Mode().Perm()
+	require.Equal(t, perm, tmpFilePerm)
 
-	if got := readFile(t, fp); !bytes.Equal(data, got) {
-		t.Fatalf("data mismatch: want %q, got %q", data, got)
-	}
+	got := readFile(t, fp)
+	require.Equal(t, data, got)
 
 	entries, err := os.ReadDir(tmpDir)
-	if err != nil {
-		t.Fatalf("reading temp dir: %v", err)
-	}
-	if len(entries) != 1 {
-		t.Fatalf("unexpected number of files in temp dir: %v", entries)
-	}
-
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	require.Equal(t, "file.txt", entries[0].Name())
 }
 
 func TestAtomicWrite_Concurrent(t *testing.T) {
@@ -60,6 +49,8 @@ func TestAtomicWrite_Concurrent(t *testing.T) {
 	expected := make(map[string]struct{}, writers)
 	var mu sync.Mutex
 
+	errCh := make(chan error, writers)
+
 	for i := range writers {
 		wg.Add(1)
 
@@ -68,10 +59,7 @@ func TestAtomicWrite_Concurrent(t *testing.T) {
 
 			data := fmt.Appendf(nil, "writer-%d", j)
 
-			if err := Write(path, data, 0o644); err != nil {
-				t.Errorf("write failed: %v", err)
-				return
-			}
+			errCh <- Write(path, data, 0o644)
 
 			mu.Lock()
 			expected[string(data)] = struct{}{}
@@ -80,110 +68,89 @@ func TestAtomicWrite_Concurrent(t *testing.T) {
 	}
 
 	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		require.NoError(t, err)
+	}
 
 	final, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("final read failed: %v", err)
-	}
+	require.NoError(t, err)
 
-	if _, ok := expected[string(final)]; !ok {
-		t.Fatalf("final content not from any writer: %q", final)
-	}
+	_, ok := expected[string(final)]
+	require.True(t, ok)
 
 	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(entries) != 1 {
-		t.Fatalf("temp files leaked: %v", entries)
-	}
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	require.Equal(t, "file.txt", entries[0].Name())
 }
 
 func TestOverwriteExistingFile(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "test.txt")
+	path := filepath.Join(dir, "file.txt")
 	originalData := []byte("original data")
 	originalPerm := os.FileMode(0o600)
-	if err := os.WriteFile(path, originalData, originalPerm); err != nil {
-		t.Fatalf("writing original file: %v", err)
-	}
-	newData := []byte("new data")
-	newPerm := os.FileMode(0o644)
-	if err := Write(path, newData, newPerm); err != nil {
-		t.Fatalf("writing file atomically: %v", err)
-	}
-	got, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("reading file: %v", err)
-	}
-	if !bytes.Equal(got, newData) {
-		t.Fatalf("got: %q, wanted: %q", got, newData)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatalf("stat: %v", err)
-	}
-	actualPerm := info.Mode().Perm()
-	if actualPerm != newPerm {
-		t.Fatalf("permissions mismatch. want: %o, got: %o", newPerm, actualPerm)
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(entries) != 1 {
-		t.Fatalf("temp files leaked: %v", entries)
-	}
 
+	err := os.WriteFile(path, originalData, originalPerm)
+	require.NoError(t, err)
+
+	wantData := []byte("new data")
+	wantPerm := os.FileMode(0o644)
+
+	err = Write(path, wantData, wantPerm)
+	require.NoError(t, err)
+
+	gotData, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, wantData, gotData)
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+
+	gotPerm := info.Mode().Perm()
+	require.Equal(t, wantPerm, gotPerm)
+
+	entries, err := os.ReadDir(dir)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	require.Equal(t, "file.txt", entries[0].Name())
 }
 
 func TestWrite_CreatesParentDir(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a", "b", "c", "file.txt")
 
-	data := []byte("hello")
-	perm := os.FileMode(0o644)
+	wantData := []byte("hello")
+	wantPerm := os.FileMode(0o644)
 
-	if err := Write(path, data, perm); err != nil {
-		t.Fatalf("Write: %v", err)
-	}
+	err := Write(path, wantData, wantPerm)
+	require.NoError(t, err)
 
-	got, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("ReadFile: %v", err)
-	}
-	if !bytes.Equal(got, data) {
-		t.Fatalf("content mismatch: got %q, want %q", got, data)
-	}
+	gotData, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	require.Equal(t, wantData, gotData)
 
 	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatalf("Stat: %v", err)
-	}
-	if info.Mode().Perm() != perm {
-		t.Fatalf("perm mismatch: got %o, want %o", info.Mode().Perm(), perm)
-	}
+	require.NoError(t, err)
+
+	gotPerm := info.Mode().Perm()
+	require.Equal(t, wantPerm, gotPerm)
 
 	entries, err := os.ReadDir(filepath.Dir(path))
-	if err != nil {
-		t.Fatalf("ReadDir: %v", err)
-	}
-	if len(entries) != 1 {
-		t.Fatalf("temp files leaked: %v", entries)
-	}
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	require.Equal(t, "file.txt", entries[0].Name())
 }
 
 func TestWrite_FailsWhenParentIsFile(t *testing.T) {
 	dir := t.TempDir()
 
 	parent := filepath.Join(dir, "parent")
-	if err := os.WriteFile(parent, []byte("not a dir"), 0o644); err != nil {
-		t.Fatalf("seed parent file: %v", err)
-	}
+	err := os.WriteFile(parent, []byte("not a dir"), 0o644)
+	require.NoError(t, err)
 
 	path := filepath.Join(parent, "child.txt")
-	err := Write(path, []byte("data"), 0o644)
-	if err == nil {
-		t.Fatalf("expected error, got nil")
-	}
+	err = Write(path, []byte("data"), 0o644)
+	require.Error(t, err)
 }
