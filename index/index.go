@@ -6,16 +6,11 @@ import (
 
 type DB struct {
 	Chats []ChatMeta `json:"chats"`
-
-	ChatsDir  string `json:"-"`
-	IndexPath string `json:"-"`
 }
 
 func NewDB(indexPath string, chatsDir string) (*DB, error) {
 	return &DB{
-		Chats:     []ChatMeta{},
-		ChatsDir:  chatsDir,
-		IndexPath: indexPath,
+		Chats: []ChatMeta{},
 	}, nil
 }
 
@@ -40,4 +35,25 @@ func (db *DB) find(chatId string) (*ChatMeta, bool) {
 		}
 	}
 	return nil, false
+}
+
+func (db *DB) GetLastChatId() string {
+	if db == nil || len(db.Chats) == 0 {
+		return ""
+	}
+
+	last := db.Chats[0]
+	for i := 1; i < len(db.Chats); i++ {
+		c := db.Chats[i]
+
+		if c.UpdatedAt.After(last.UpdatedAt) {
+			last = c
+			continue
+		}
+		if c.UpdatedAt.Equal(last.UpdatedAt) && c.ID > last.ID {
+			last = c
+		}
+	}
+
+	return last.ID
 }

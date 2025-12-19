@@ -22,13 +22,14 @@ type fixture struct {
 
 	wroteState    State
 	wroteSettings settings.Settings
-	created       time.Time
-	updated       time.Time
+	created1      time.Time
+	updated1      time.Time
+	created2      time.Time
+	updated2      time.Time
 }
 type Opts struct {
 	writeChat1 bool
 	writeChat2 bool
-	LastChatId string
 }
 
 func initFirstRun(t *testing.T) fixture {
@@ -67,7 +68,6 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	require.NoError(t, fileatomic.Write(fx.settingsPath, data, 0o600))
 
 	st := State{
-		LastChatId: opt.LastChatId,
 		LastProvider: providers.Provider{
 			Name:    "yet",
 			Key:     "ANOTHER",
@@ -82,23 +82,23 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	chatsDir, err := paths.ChatsDir()
 	require.NoError(t, err)
 
-	created := time.Date(2025, 1, 2, 3, 4, 5, 6, time.UTC)
-	updated := created.Add(10 * time.Minute)
+	created1 := time.Date(2025, 1, 2, 4, 4, 5, 6, time.UTC)
+	updated1 := created1.Add(10 * time.Minute)
+	created2 := time.Date(2025, 1, 2, 3, 4, 5, 6, time.UTC)
+	updated2 := created2.Add(10 * time.Minute)
 
 	db := index.DB{
 		Chats: []index.ChatMeta{
-			{ID: "1", CreatedAt: created, UpdatedAt: updated},
-			{ID: "2", CreatedAt: created, UpdatedAt: updated},
+			{ID: "1", CreatedAt: created1, UpdatedAt: updated1},
+			{ID: "2", CreatedAt: created2, UpdatedAt: updated2},
 		},
-		ChatsDir:  chatsDir,
-		IndexPath: fx.indexPath,
 	}
 	require.NoError(t, db.Save(fx.indexPath))
 
 	chat1 := chat.Chat{
 		ID:        "1",
-		CreatedAt: created,
-		UpdatedAt: updated,
+		CreatedAt: created1,
+		UpdatedAt: updated1,
 		Conversation: []chat.Message{
 			{Role: "user", Content: "dumb question"},
 			{Role: "assistant", Content: "assertive answer"},
@@ -106,8 +106,8 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	}
 	chat2 := chat.Chat{
 		ID:        "2",
-		CreatedAt: created,
-		UpdatedAt: updated,
+		CreatedAt: created2,
+		UpdatedAt: updated2,
 		Conversation: []chat.Message{
 			{Role: "user", Content: "dumber question"},
 			{Role: "assistant", Content: "eagerly assertive answer"},
@@ -123,8 +123,10 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 
 	fx.wroteSettings = set
 	fx.wroteState = st
-	fx.created = created
-	fx.updated = updated
+	fx.created1 = created1
+	fx.updated1 = updated1
+	fx.created2 = created2
+	fx.updated2 = updated2
 	return fx
 }
 
@@ -149,7 +151,7 @@ func TestLoadOrCreate_FirstRun(t *testing.T) {
 }
 
 func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
-	fx := initWithExistingFiles(t, Opts{true, true, "1"})
+	fx := initWithExistingFiles(t, Opts{writeChat1: true, writeChat2: true})
 
 	s, err := LoadOrCreate(fx.sessionPath)
 	require.NoError(t, err)
@@ -158,7 +160,6 @@ func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
 	require.NotNil(t, s.Chat)
 	require.NotNil(t, s.DB)
 
-	require.Equal(t, fx.wroteState.LastChatId, s.Chat.ID)
 	require.Equal(t, fx.wroteState.LastProvider, s.Provider)
 
 	require.Equal(t, fx.wroteSettings, s.AppSettings)
@@ -168,8 +169,8 @@ func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
 	require.Equal(t, "dumb question", s.Chat.Conversation[0].Content)
 	require.Equal(t, "assistant", s.Chat.Conversation[1].Role)
 	require.Equal(t, "assertive answer", s.Chat.Conversation[1].Content)
-	require.True(t, s.Chat.CreatedAt.Equal(fx.created))
-	require.True(t, s.Chat.UpdatedAt.Equal(fx.updated))
+	require.True(t, s.Chat.CreatedAt.Equal(fx.created1))
+	require.True(t, s.Chat.UpdatedAt.Equal(fx.updated1))
 
 	require.Len(t, s.DB.Chats, 2)
 	var have1, have2 bool
@@ -177,12 +178,12 @@ func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
 		switch m.ID {
 		case "1":
 			have1 = true
-			require.True(t, m.CreatedAt.Equal(fx.created))
-			require.True(t, m.UpdatedAt.Equal(fx.updated))
+			require.True(t, m.CreatedAt.Equal(fx.created1))
+			require.True(t, m.UpdatedAt.Equal(fx.updated1))
 		case "2":
 			have2 = true
-			require.True(t, m.CreatedAt.Equal(fx.created))
-			require.True(t, m.UpdatedAt.Equal(fx.updated))
+			require.True(t, m.CreatedAt.Equal(fx.created2))
+			require.True(t, m.UpdatedAt.Equal(fx.updated2))
 		}
 	}
 	require.True(t, have1, "db should contain chat meta id=1")
@@ -190,7 +191,7 @@ func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
 }
 
 func TestLoadOrCreate_ChatMissing(t *testing.T) {
-	fx := initWithExistingFiles(t, Opts{false, true, "1"})
+	fx := initWithExistingFiles(t, Opts{writeChat1: false, writeChat2: true})
 	_, err := LoadOrCreate(fx.sessionPath)
 	require.Error(t, err)
 }

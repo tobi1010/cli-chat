@@ -12,7 +12,6 @@ import (
 )
 
 type State struct {
-	LastChatId   string             `json:"lastChatId"`
 	LastProvider providers.Provider `json:"lastProvider"`
 }
 

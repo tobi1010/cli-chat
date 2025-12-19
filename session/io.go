@@ -24,16 +24,16 @@ func LoadOrCreate(sessionPath string) (*Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading session file: %w", err)
 	}
-	if !ok {
-		return s, nil
+	if ok {
+		s.applySavedState(state)
 	}
-	s.applySavedState(state)
 
 	if err := s.loadDb(); err != nil {
 		return nil, fmt.Errorf("loading database: %w", err)
 	}
 
-	if err := s.loadChat(state.LastChatId); err != nil {
+	lastChatId := s.DB.GetLastChatId()
+	if err := s.loadChat(lastChatId); err != nil {
 		return nil, fmt.Errorf("loading chat: %w", err)
 	}
 
@@ -42,7 +42,6 @@ func LoadOrCreate(sessionPath string) (*Session, error) {
 
 func (s *Session) Save(sessionPath string) error {
 	st := State{
-		LastChatId:   s.Chat.ID,
 		LastProvider: s.Provider,
 	}
 	data, err := json.Marshal(st)

@@ -4,27 +4,42 @@ import (
 	"cli-chat/commands"
 	"cli-chat/paths"
 	"cli-chat/session"
-	"fmt"
+	"errors"
 	"log"
 	"os"
 )
 
 func main() {
 	sessionPath, err := paths.SessionPath()
-	s, err := session.LoadOrCreate(sessionPath)
 	if err != nil {
-		log.Printf("error: %v", err)
-		os.Exit(1)
-	}
-	fmt.Printf("%v", s)
-	commands.CommandPrintSettings(s, []string{})
-	if err != nil {
-		log.Printf("creating session: %v", err)
+		log.Printf("error resolving session path:")
+		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
 
-	if err = startRepl(s); err != nil {
-		log.Printf("repl: %v", err)
+	s, err := session.LoadOrCreate(sessionPath)
+	if err != nil {
+		log.Printf("error LoadOrCreate %s:", sessionPath)
+		unwrapAndPrintErrors(err)
 		os.Exit(1)
+	}
+	_ = s.Save(sessionPath)
+
+	if err := commands.CommandPrintSettings(s, []string{}); err != nil {
+		log.Printf("error printing settings:")
+		unwrapAndPrintErrors(err)
+		os.Exit(1)
+	}
+
+	if err := startRepl(s); err != nil {
+		log.Printf("error in repl:")
+		unwrapAndPrintErrors(err)
+		os.Exit(1)
+	}
+}
+
+func unwrapAndPrintErrors(err error) {
+	for e := err; e != nil; e = errors.Unwrap(e) {
+		log.Printf("  -> %v", e)
 	}
 }
