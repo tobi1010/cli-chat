@@ -8,10 +8,10 @@ type DB struct {
 	Chats []ChatMeta `json:"chats"`
 }
 
-func NewDB(indexPath string, chatsDir string) (*DB, error) {
+func NewDB() *DB {
 	return &DB{
 		Chats: []ChatMeta{},
-	}, nil
+	}
 }
 
 type ChatMeta struct {
@@ -21,14 +21,14 @@ type ChatMeta struct {
 }
 
 func (db *DB) Touch(chatId string, now time.Time) {
-	if meta, ok := db.find(chatId); ok {
+	if meta, ok := db.Find(chatId); ok {
 		meta.UpdatedAt = now
 		return
 	}
 	db.Chats = append(db.Chats, ChatMeta{ID: chatId, CreatedAt: now, UpdatedAt: now})
 }
 
-func (db *DB) find(chatId string) (*ChatMeta, bool) {
+func (db *DB) Find(chatId string) (*ChatMeta, bool) {
 	for i := range db.Chats {
 		if db.Chats[i].ID == chatId {
 			return &db.Chats[i], true

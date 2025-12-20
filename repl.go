@@ -6,6 +6,7 @@ import (
 	"cli-chat/internal/api"
 	"cli-chat/session"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -16,7 +17,12 @@ func startRepl(s *session.Session) error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Printf("%s>", s.Provider.Model)
-		scanner.Scan()
+		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				return fmt.Errorf("reading stdin: %w", err)
+			}
+			return nil //EOF
+		}
 
 		text := strings.TrimSpace(scanner.Text())
 		if text == "" {
@@ -27,23 +33,28 @@ func startRepl(s *session.Session) error {
 			// command
 			lowerText := strings.ToLower(strings.TrimPrefix(text, s.AppSettings.CommandPrefix))
 			tokens := strings.Fields(lowerText)
+			if len(tokens) == 0 {
+				continue
+			}
 
 			if command, found := cmds[tokens[0]]; found {
 				if err := command.Callback(s, tokens[1:]); err != nil {
+					if errors.Is(err, commands.ErrExitRequested) {
+						return nil
+					}
 					return fmt.Errorf("Error executing command: %w", err)
 				}
 			} else {
-				fmt.Printf("unknown command: %sp\n", tokens[0])
+				fmt.Printf("unknown command: %s\n", tokens[0])
 			}
 
 		} else {
 			ctx := context.Background()
 			stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s, text)
 			if err != nil {
-				return fmt.Errorf("recieving stream : %w", err)
+				return fmt.Errorf("receiving stream : %w", err)
 			}
 			s.Chat.AddMessage("user", text)
-			var acc strings.Builder
 			lineLength := 0
 			streamOpen := true
 			for streamOpen {
@@ -54,22 +65,22 @@ func startRepl(s *session.Session) error {
 						break
 					}
 					fmt.Print(delta)
-					len, err := acc.WriteString(delta)
-					if err != nil {
-						return fmt.Errorf("building response string: %w", err)
-					}
-					lineLength += len
+					lineLength += len(delta)
 					if lineLength > s.AppSettings.Columns {
 						fmt.Print("\n")
 						lineLength = 0
 					}
 
 				case err, ok := <-errCh:
+					if !ok {
+						errCh = nil
+						break
+					}
 					if ok && err != nil {
 						return fmt.Errorf("stream error: %w", err)
 					}
 				case fullResponse, ok := <-fullCh:
-					outputText := ""
+					var outputText strings.Builder
 					role := ""
 					if ok {
 						for i := range fullResponse.Output {
@@ -77,12 +88,11 @@ func startRepl(s *session.Session) error {
 								role = fullResponse.Output[i].Role
 							}
 							for j := range fullResponse.Output[i].Content {
-								outputText = outputText + fullResponse.Output[i].Content[j].Text
+								outputText.WriteString(fullResponse.Output[i].Content[j].Text)
 							}
 						}
 
-						s.Chat.AddMessage(role, outputText)
-						fmt.Printf("%v", s.Chat.Conversation)
+						s.Chat.AddMessage(role, outputText.String())
 						_ = fullResponse
 					}
 				}

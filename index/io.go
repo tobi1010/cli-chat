@@ -23,6 +23,7 @@ func Load(path string) (*DB, error) {
 	}
 	return &db, nil
 }
+
 func (db *DB) Save(path string) error {
 	data, err := json.MarshalIndent(db, "", "  ")
 	if err != nil {

@@ -36,6 +36,7 @@ func main() {
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
+	os.Exit(0)
 }
 
 func unwrapAndPrintErrors(err error) {

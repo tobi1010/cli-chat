@@ -4,10 +4,8 @@ import (
 	"cli-chat/chat"
 	"cli-chat/index"
 	"cli-chat/internal/client"
-	"cli-chat/paths"
 	"cli-chat/providers"
 	"cli-chat/settings"
-	"fmt"
 	"time"
 )
 
@@ -29,18 +27,6 @@ func NewDefaultSession() (*Session, error) {
 	s.AppSettings = settings.NewDefaultSettings()
 	s.Client = client.New(time.Duration(s.AppSettings.Timeout) * time.Second)
 	s.Chat = chat.New()
-
-	indexPath, err := paths.IndexPath()
-	if err != nil {
-		return nil, fmt.Errorf("resolving index path: %w", err)
-	}
-	chatsDir, err := paths.ChatsDir()
-	if err != nil {
-		return nil, fmt.Errorf("resolving chats dir: %w", err)
-	}
-	s.DB, err = index.NewDB(indexPath, chatsDir)
-	if err != nil {
-		return nil, fmt.Errorf("loading db: %w", err)
-	}
+	s.DB = index.NewDB()
 	return &s, nil
 }
