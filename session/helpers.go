@@ -4,7 +4,6 @@ import (
 	"cli-chat/chat"
 	"cli-chat/index"
 	"cli-chat/internal/client"
-	"cli-chat/paths"
 	"cli-chat/settings"
 	"encoding/json"
 	"errors"
@@ -49,11 +48,7 @@ func (s *Session) loadChat(chatId string) error {
 		s.Chat = chat.New()
 		return nil
 	}
-	chatsDir, err := paths.ChatsDir()
-	if err != nil {
-		return fmt.Errorf("resolving chats dir: %w", err)
-	}
-	c, err := chat.LoadChat(chatsDir, chatId)
+	c, err := chat.LoadChat(s.Paths.ChatsDir, chatId)
 	if err != nil {
 		return fmt.Errorf("load chat %q: %w", chatId, err)
 	}
@@ -62,11 +57,7 @@ func (s *Session) loadChat(chatId string) error {
 }
 
 func (s *Session) loadDb() error {
-	indexPath, err := paths.IndexPath()
-	if err != nil {
-		return fmt.Errorf("resolving index path: %w", err)
-	}
-	db, err := index.Load(indexPath)
+	db, err := index.Load(s.Paths.IndexPath)
 	if err != nil {
 		return fmt.Errorf("reading index file: %w", err)
 	}

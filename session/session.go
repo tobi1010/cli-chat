@@ -1,7 +1,6 @@
 package session
 
 import (
-	"cli-chat/paths"
 	"fmt"
 )
 
@@ -12,19 +11,11 @@ func (s *Session) UpdateChat() error {
 	if s.Chat == nil {
 		return fmt.Errorf("chat is nil")
 	}
-	chatsDir, err := paths.ChatsDir()
-	if err != nil {
-		return fmt.Errorf("resolving chats dir: %w", err)
-	}
-	if err := s.Chat.Write(chatsDir); err != nil {
+	if err := s.Chat.Write(s.Paths.ChatsDir); err != nil {
 		return fmt.Errorf("writing chat atomically: %w", err)
 	}
-	indexPath, err := paths.IndexPath()
-	if err != nil {
-		return fmt.Errorf("resolving index path: %w", err)
-	}
 	s.DB.Touch(s.Chat.ID, s.Chat.UpdatedAt)
-	if err := s.DB.Save(indexPath); err != nil {
+	if err := s.DB.Save(s.Paths.IndexPath); err != nil {
 		return fmt.Errorf("saving db: %w", err)
 	}
 	return nil

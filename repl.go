@@ -50,11 +50,11 @@ func startRepl(s *session.Session) error {
 
 		} else {
 			ctx := context.Background()
-			stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s, text)
+			s.Chat.AddMessage("user", text)
+			stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s, fmt.Sprintf("%v", s.Chat.Conversation))
 			if err != nil {
 				return fmt.Errorf("receiving stream : %w", err)
 			}
-			s.Chat.AddMessage("user", text)
 			lineLength := 0
 			streamOpen := true
 			for streamOpen {
@@ -93,7 +93,10 @@ func startRepl(s *session.Session) error {
 						}
 
 						s.Chat.AddMessage(role, outputText.String())
-						_ = fullResponse
+						if err := s.UpdateChat(); err != nil {
+							return fmt.Errorf("updating chat: %w", err)
+						}
+						fmt.Printf("\n        response by: %s\n", fullResponse.Model)
 					}
 				}
 			}
