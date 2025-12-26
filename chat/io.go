@@ -6,19 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 )
 
-func (c *Chat) AddMessage(role string, content string) {
-	msg := Message{
-		Role:    role,
-		Content: content,
-	}
-	c.Conversation = append(c.Conversation, msg)
-	c.UpdatedAt = time.Now()
-}
-
-func (c *Chat) Write(chatsDir string) error {
+func (c *Chat) Save(chatsDir string) error {
 
 	path := filepath.Join(chatsDir, c.ID+".json")
 
@@ -33,7 +23,7 @@ func (c *Chat) Write(chatsDir string) error {
 	return nil
 }
 
-func LoadChat(chatsDir string, id string) (*Chat, error) {
+func Load(chatsDir string, id string) (*Chat, error) {
 
 	path := filepath.Join(chatsDir, id+".json")
 

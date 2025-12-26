@@ -1,7 +1,8 @@
-package api
+package anthropic
 
 import (
-	"cli-chat/internal/auth"
+	"cli-chat/internal/env"
+	"cli-chat/internal/llm"
 	"cli-chat/session"
 	"context"
 	"encoding/json"
@@ -11,19 +12,19 @@ import (
 )
 
 type Model struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	Created int    `json:"created"`
-	OwnedBy string `json:"owned_by"`
+	ID      string
+	Object  string
+	Created int
+	OwnedBy string
 }
 
-type ModelsResponse struct {
+type AnthropicModelsResponse struct {
 	Object string  `json:"object"`
 	Data   []Model `json:"data"`
 }
 
-func GetModels(ctx context.Context, s *session.Session) ([]Model, error) {
-	apiKey, err := auth.ResolveAPIKey(s.Provider.Key)
+func (Backend) AnthropicGetModels(ctx context.Context, s *session.Session) ([]llm.Model, error) {
+	apiKey, err := env.ResolveAPIKey(s.Provider.Key)
 	if err != nil {
 		return nil, fmt.Errorf("resloving API key for %s: %w", s.Provider, err)
 	}
@@ -32,7 +33,7 @@ func GetModels(ctx context.Context, s *session.Session) ([]Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("X-Api-Key", apiKey)
 
 	res, err := s.Client.HttpClient.Do(req)
 	if err != nil {
@@ -47,11 +48,14 @@ func GetModels(ctx context.Context, s *session.Session) ([]Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}
-	var modelsRes ModelsResponse
+	var modelsRes AnthropicModelsResponse
 	if err = json.Unmarshal(data, &modelsRes); err != nil {
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 	models := modelsRes.Data
-
-	return models, nil
+	apiModels := []llm.Model{}
+	for _, m := range models {
+		apiModels = append(apiModels, ToApiModel(m))
+	}
+	return apiModels, nil
 }

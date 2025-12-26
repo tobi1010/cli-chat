@@ -4,6 +4,7 @@ import (
 	"cli-chat/chat"
 	"cli-chat/index"
 	"cli-chat/internal/client"
+	"cli-chat/providers"
 	"cli-chat/settings"
 	"encoding/json"
 	"errors"
@@ -17,10 +18,15 @@ func (s *Session) applySettings(set settings.Settings) {
 	s.Client = client.New(time.Duration(set.Timeout) * time.Second)
 }
 
-func (s *Session) applySavedState(state State) {
-	if state.LastProvider.Name != "" {
-		s.Provider = state.LastProvider
+func (s *Session) applySavedState(state State) error {
+	if state.LastProvider != "" {
+		lastProv, ok := providers.Get(state.LastProvider, state.LastModel)
+		if !ok {
+			return fmt.Errorf("resolving last provider:")
+		}
+		s.Provider = lastProv
 	}
+	return nil
 }
 
 func loadState(path string) (State, bool, error) {
@@ -48,7 +54,7 @@ func (s *Session) loadChat(chatId string) error {
 		s.Chat = chat.New()
 		return nil
 	}
-	c, err := chat.LoadChat(s.Paths.ChatsDir, chatId)
+	c, err := chat.Load(s.Paths.ChatsDir, chatId)
 	if err != nil {
 		return fmt.Errorf("load chat %q: %w", chatId, err)
 	}
@@ -63,4 +69,13 @@ func (s *Session) loadDb() error {
 	}
 	s.DB = db
 	return nil
+}
+
+func (s *Session) toState() State {
+	st := State{
+		LastProvider: s.Provider.Name,
+		LastModel:    s.Provider.Model,
+	}
+	return st
+
 }

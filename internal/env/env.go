@@ -1,4 +1,4 @@
-package auth
+package env
 
 import (
 	"fmt"
@@ -11,4 +11,9 @@ func ResolveAPIKey(envVarName string) (string, error) {
 		return "", fmt.Errorf("resolving API key. Make sure your API key is exported as <provider_name>_API_KEY!")
 	}
 	return key, nil
+}
+
+func FindApiKeyCandidate() []string {
+	fmt.Println(os.Environ())
+	return []string{}
 }

@@ -12,7 +12,8 @@ import (
 )
 
 type State struct {
-	LastProvider providers.Provider `json:"lastProvider"`
+	LastProvider string `json:"last_provider"`
+	LastModel    string `json:"last_model"`
 }
 type Paths struct {
 	SessionPath  string `json:"session_path"`

@@ -1,8 +1,9 @@
-package api
+package openai
 
 import (
 	"bufio"
 	"bytes"
+	"cli-chat/internal/llm"
 	"cli-chat/session"
 	"context"
 	"encoding/json"
@@ -39,7 +40,7 @@ type ResponseCompleted struct {
 	Response       OpenAiResponse `json:"response"`
 }
 
-func CreateStreamResponse(ctx context.Context, s *session.Session, input string) (chan string, chan OpenAiResponse, chan error, error) {
+func (Backend) CreateStreamResponse(ctx context.Context, s *session.Session, input string) (<-chan string, <-chan llm.Response, <-chan error, error) {
 	payload := openAiPayload{
 		Model:  s.Provider.Model,
 		Input:  input,
@@ -51,7 +52,7 @@ func CreateStreamResponse(ctx context.Context, s *session.Session, input string)
 	}
 
 	outCh := make(chan string, 64)
-	fullCh := make(chan OpenAiResponse)
+	fullCh := make(chan llm.Response)
 	errCh := make(chan error)
 
 	go func() {
@@ -95,7 +96,7 @@ func CreateStreamResponse(ctx context.Context, s *session.Session, input string)
 							errCh <- fmt.Errorf("unmarshalling json: %w", err)
 							return
 						}
-						fullCh <- resCompletedEvent.Response
+						fullCh <- toApiResponse(resCompletedEvent.Response)
 						return
 					default:
 					}

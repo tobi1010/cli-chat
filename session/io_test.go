@@ -119,10 +119,10 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	}
 
 	if opt.writeChat1 {
-		require.NoError(t, chat1.Write(chatsDir))
+		require.NoError(t, chat1.Save(chatsDir))
 	}
 	if opt.writeChat2 {
-		require.NoError(t, chat2.Write(chatsDir))
+		require.NoError(t, chat2.Save(chatsDir))
 	}
 
 	fx.wroteSettings = set

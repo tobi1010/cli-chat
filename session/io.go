@@ -40,10 +40,8 @@ func LoadOrCreate(sessionPath string) (*Session, error) {
 }
 
 func (s *Session) Save(sessionPath string) error {
-	st := State{
-		LastProvider: s.Provider,
-	}
-	data, err := json.Marshal(st)
+	st := s.toState()
+	data, err := json.MarshalIndent(st, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
 	}

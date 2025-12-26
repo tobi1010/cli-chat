@@ -2,6 +2,7 @@ package commands
 
 import (
 	"cli-chat/internal/api"
+	"cli-chat/internal/llm"
 	"cli-chat/session"
 	"context"
 	"fmt"
@@ -40,8 +41,8 @@ func CommandListModels(s *session.Session, args []string) error {
 	return nil
 }
 
-func filterRelevantKeepLatest(models []api.Model) []api.Model {
-	bestByBase := make(map[string]api.Model, len(models))
+func filterRelevantKeepLatest(models []llm.Model) []llm.Model {
+	bestByBase := make(map[string]llm.Model, len(models))
 
 	for _, m := range models {
 		id := strings.ToLower(m.ID)
@@ -67,7 +68,7 @@ func filterRelevantKeepLatest(models []api.Model) []api.Model {
 		}
 	}
 
-	out := make([]api.Model, 0, len(bestByBase))
+	out := make([]llm.Model, 0, len(bestByBase))
 	for _, m := range bestByBase {
 		out = append(out, m)
 	}

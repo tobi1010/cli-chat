@@ -11,7 +11,7 @@ func (s *Session) UpdateChat() error {
 	if s.Chat == nil {
 		return fmt.Errorf("chat is nil")
 	}
-	if err := s.Chat.Write(s.Paths.ChatsDir); err != nil {
+	if err := s.Chat.Save(s.Paths.ChatsDir); err != nil {
 		return fmt.Errorf("writing chat atomically: %w", err)
 	}
 	s.DB.Touch(s.Chat.ID, s.Chat.UpdatedAt)

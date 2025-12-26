@@ -47,6 +47,11 @@ func GetCommands() map[string]CliCommand {
 			Description: "lists all available providers",
 			Callback:    CommandListProviders,
 		},
+		"switch-provider": {
+			Name:        "switch-provider",
+			Description: "switch ai provider",
+			Callback:    CommandSwitchProvider,
+		},
 		"switch-model": {
 			Name:        "switch-model",
 			Description: "switch llm",

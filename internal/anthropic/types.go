@@ -1,6 +1,6 @@
-package api
+package anthropic
 
-type openAiPayload struct {
+type anthropicPayload struct {
 	Model  string `json:"model"`
 	Input  string `json:"input"`
 	Stream bool   `json:"stream"`
@@ -13,7 +13,7 @@ type deltaEvent struct {
 	Delta          string   `json:"delta"`
 }
 
-type OpenAiResponse struct {
+type anthropicResponse struct {
 	ID                string `json:"id"`
 	Object            string `json:"object"`
 	CreatedAt         int    `json:"created_at"`
@@ -67,7 +67,7 @@ type OpenAiResponse struct {
 	} `json:"metadata"`
 }
 
-type StreamResponse struct {
+type anthropicStreamResponse struct {
 	Type           string `json:"type"`
 	SequenceNumber int    `json:"sequence_number"`
 	Response       struct {
