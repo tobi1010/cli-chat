@@ -5,7 +5,7 @@ import (
 	"cli-chat/chat"
 	"cli-chat/commands"
 	"cli-chat/internal/api"
-	"cli-chat/internal/llm"
+	"cli-chat/internal/apitypes"
 	"cli-chat/session"
 	"context"
 	"errors"
@@ -105,7 +105,7 @@ func handleChat(s *session.Session, text string) error {
 	return nil
 }
 
-func consumeStream(stream <-chan string, fullCh <-chan llm.Response, errCh <-chan error, printColumns int) (llm.Response, error) {
+func consumeStream(stream <-chan string, fullCh <-chan apitypes.Response, errCh <-chan error, printColumns int) (apitypes.Response, error) {
 	lineLength := 0
 	streamOpen := true
 	for streamOpen {
@@ -128,20 +128,20 @@ func consumeStream(stream <-chan string, fullCh <-chan llm.Response, errCh <-cha
 				break
 			}
 			if err != nil {
-				return llm.Response{}, fmt.Errorf("stream error: %w", err)
+				return apitypes.Response{}, fmt.Errorf("stream error: %w", err)
 			}
 		case fullResponse, ok := <-fullCh:
 			if !ok {
-				return llm.Response{}, fmt.Errorf("stream ended without full response")
+				return apitypes.Response{}, fmt.Errorf("stream ended without full response")
 			}
 			return fullResponse, nil
 		}
 	}
 
-	return llm.Response{}, fmt.Errorf("stream closed without full response")
+	return apitypes.Response{}, fmt.Errorf("stream closed without full response")
 }
 
-func extractMessage(fullResponse llm.Response) chat.Message {
+func extractMessage(fullResponse apitypes.Response) chat.Message {
 	var outputText strings.Builder
 	role := ""
 	for i := range fullResponse.Output {

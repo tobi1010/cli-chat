@@ -3,7 +3,7 @@ package openai
 import (
 	"bufio"
 	"bytes"
-	"cli-chat/internal/llm"
+	"cli-chat/internal/apitypes"
 	"cli-chat/session"
 	"context"
 	"encoding/json"
@@ -40,7 +40,7 @@ type ResponseCompleted struct {
 	Response       OpenAiResponse `json:"response"`
 }
 
-func (Backend) CreateStreamResponse(ctx context.Context, s *session.Session, input string) (<-chan string, <-chan llm.Response, <-chan error, error) {
+func CreateStreamResponse(ctx context.Context, s *session.Session, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
 	payload := openAiPayload{
 		Model:  s.Provider.Model,
 		Input:  input,
@@ -52,7 +52,7 @@ func (Backend) CreateStreamResponse(ctx context.Context, s *session.Session, inp
 	}
 
 	outCh := make(chan string, 64)
-	fullCh := make(chan llm.Response)
+	fullCh := make(chan apitypes.Response)
 	errCh := make(chan error)
 
 	go func() {

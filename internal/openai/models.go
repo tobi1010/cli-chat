@@ -1,8 +1,8 @@
 package openai
 
 import (
+	"cli-chat/internal/apitypes"
 	"cli-chat/internal/env"
-	"cli-chat/internal/llm"
 	"cli-chat/session"
 	"context"
 	"encoding/json"
@@ -23,7 +23,7 @@ type ModelsResponse struct {
 	Data   []Model `json:"data"`
 }
 
-func (Backend) GetModels(ctx context.Context, s *session.Session) ([]llm.Model, error) {
+func GetModels(ctx context.Context, s *session.Session) ([]apitypes.Model, error) {
 	apiKey, err := env.ResolveAPIKey(s.Provider.Key)
 	if err != nil {
 		return nil, fmt.Errorf("resloving API key for %s: %w", s.Provider, err)
@@ -53,7 +53,7 @@ func (Backend) GetModels(ctx context.Context, s *session.Session) ([]llm.Model, 
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 	models := modelsRes.Data
-	apiModels := []llm.Model{}
+	apiModels := []apitypes.Model{}
 	for _, m := range models {
 		apiModels = append(apiModels, toApiModel(m))
 	}

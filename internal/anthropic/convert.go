@@ -1,7 +1,18 @@
 package anthropic
 
-import "cli-chat/internal/llm"
+import (
+	"cli-chat/internal/apitypes"
+)
 
-func ToApiModel(model Model) llm.Model {
-	return llm.Model{ID: model.ID, Created: model.Created, OwnedBy: model.OwnedBy}
+func toApiModel(model Model) apitypes.Model {
+	return apitypes.Model{
+		ID:      model.ID,
+		Created: model.Created,
+		OwnedBy: model.OwnedBy,
+	}
+
+}
+
+func toApiResponse(res anthropicResponse) apitypes.Response {
+	return apitypes.Response{}
 }

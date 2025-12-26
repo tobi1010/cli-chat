@@ -1,14 +1,15 @@
 package openai
 
-import (
-	"cli-chat/internal/llm"
-)
+import "cli-chat/internal/apitypes"
 
-func toApiModel(model Model) llm.Model {
-	return llm.Model{ID: model.ID, Created: model.Created, OwnedBy: model.OwnedBy}
-}
-func toApiResponse(response OpenAiResponse) llm.Response {
-	return llm.Response{
-		Model: response.Model,
+func toApiModel(model Model) apitypes.Model {
+	return apitypes.Model{
+		ID:      model.ID,
+		Created: model.Created,
+		OwnedBy: model.OwnedBy,
 	}
+
+}
+func toApiResponse(res OpenAiResponse) apitypes.Response {
+	return apitypes.Response{}
 }

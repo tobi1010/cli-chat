@@ -1,8 +1,8 @@
 package anthropic
 
 import (
+	"cli-chat/internal/apitypes"
 	"cli-chat/internal/env"
-	"cli-chat/internal/llm"
 	"cli-chat/session"
 	"context"
 	"encoding/json"
@@ -13,7 +13,6 @@ import (
 
 type Model struct {
 	ID      string
-	Object  string
 	Created int
 	OwnedBy string
 }
@@ -23,7 +22,7 @@ type AnthropicModelsResponse struct {
 	Data   []Model `json:"data"`
 }
 
-func (Backend) AnthropicGetModels(ctx context.Context, s *session.Session) ([]llm.Model, error) {
+func GetModels(ctx context.Context, s *session.Session) ([]apitypes.Model, error) {
 	apiKey, err := env.ResolveAPIKey(s.Provider.Key)
 	if err != nil {
 		return nil, fmt.Errorf("resloving API key for %s: %w", s.Provider, err)
@@ -53,9 +52,9 @@ func (Backend) AnthropicGetModels(ctx context.Context, s *session.Session) ([]ll
 		return nil, fmt.Errorf("unmarshalling json: %w", err)
 	}
 	models := modelsRes.Data
-	apiModels := []llm.Model{}
+	apiModels := []apitypes.Model{}
 	for _, m := range models {
-		apiModels = append(apiModels, ToApiModel(m))
+		apiModels = append(apiModels, toApiModel(m))
 	}
 	return apiModels, nil
 }
