@@ -20,5 +20,12 @@ func GetModels(ctx context.Context, s *session.Session) ([]apitypes.Model, error
 	}
 }
 func CreateStreamResponse(ctx context.Context, s *session.Session, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
-	return nil, nil, nil, nil
+	switch s.Provider.Name {
+	case "openai":
+		return openai.CreateStreamResponse(ctx, s, input)
+	case "anthropic":
+		return anthropic.CreateStreamResponse(ctx, s, input)
+	default:
+		return nil, nil, nil, fmt.Errorf("unsupported provider: %s", s.Provider.Name)
+	}
 }
