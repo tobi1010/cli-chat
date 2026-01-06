@@ -56,6 +56,7 @@ func AppDataDir() (string, error) {
 	}
 	return filepath.Join(home, ".local", "share", AppDirName), nil
 }
+
 func SessionPath() (string, error) {
 	dataDir, err := AppDataDir()
 	if err != nil {
@@ -90,4 +91,12 @@ func CachePath() (string, error) {
 		return "", fmt.Errorf("resolving app data dir: %w", err)
 	}
 	return filepath.Join(dataDir, CacheFile), nil
+}
+
+func StatePath() (string, error) {
+	dataDir, err := AppDataDir()
+	if err != nil {
+		return "", fmt.Errorf("resolving app data dir: %w", err)
+	}
+	return dataDir, nil
 }

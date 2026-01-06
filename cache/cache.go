@@ -7,6 +7,15 @@ import (
 	"time"
 )
 
+func (c *Cache) Add(providerName string) {
+	if c.Providers == nil {
+		c.Providers = make(map[string]ModelList, 0)
+	}
+	c.Providers[providerName] = ModelList{
+		Models: make([]apitypes.Model, 0, 0),
+	}
+}
+
 func (c *Cache) Get(provider string, model string) (apitypes.Model, bool) {
 	models, ok := c.Providers[provider]
 	if !ok {
@@ -29,10 +38,10 @@ func (m ModelList) getById(id string) (apitypes.Model, bool) {
 }
 
 type ModelFetcher interface {
-	FetchModels(ctx context.Context, provider string) ([]apitypes.Model, error)
+	FetchModels(ctx context.Context, providerName string) ([]apitypes.Model, error)
 }
 
-func (c *Cache) EnsureFresh(ctx context.Context, cachePath string, provider string, ttl time.Duration, fetcher ModelFetcher) error {
+func (c *Cache) EnsureFresh(ctx context.Context, cachePath string, provider string, ttl time.Duration, fetcher ModelFetcher) (*Cache, error) {
 	if c.Providers == nil {
 		c.Providers = make(map[string]ModelList)
 	}
@@ -41,16 +50,20 @@ func (c *Cache) EnsureFresh(ctx context.Context, cachePath string, provider stri
 	if list.FetchedAt.IsZero() || list.IsStale(ttl) {
 		models, err := fetcher.FetchModels(ctx, provider)
 		if err != nil {
-			return fmt.Errorf("fetching models for %q: %w", provider, err)
+			return nil, fmt.Errorf("fetching models for %q: %w", provider, err)
 		}
 		list.FetchedAt = time.Now()
 		list.Models = models
 		c.Providers[provider] = list
 	}
 	if err := c.Save(cachePath); err != nil {
-		return fmt.Errorf("writing cache atomically: %w", err)
+		return nil, fmt.Errorf("writing cache atomically: %w", err)
 	}
-	return nil
+	return c, nil
+}
+
+func (c *Cache) ValidateModel(providerName string, modelID string) bool {
+
 }
 
 func (m ModelList) IsStale(ttl time.Duration) bool {

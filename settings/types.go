@@ -5,6 +5,7 @@ type Settings struct {
 	Timeout       int    `json:"timeout"`
 	Columns       int    `json:"columns"`
 	ApiKey        string `json:"api_key"`
+	TTL           int
 }
 
 func NewDefaultSettings() Settings {
@@ -13,5 +14,6 @@ func NewDefaultSettings() Settings {
 		Timeout:       60,
 		Columns:       80,
 		ApiKey:        "OPENAI_API_KEY",
+		TTL:           60 * 60 * 24 * 7, // 1 week
 	}
 }

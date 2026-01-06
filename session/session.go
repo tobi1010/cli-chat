@@ -3,6 +3,7 @@ package session
 import (
 	"cli-chat/internal/api"
 	"cli-chat/internal/apitypes"
+	"cli-chat/providers"
 	"context"
 	"fmt"
 )
@@ -24,8 +25,9 @@ func (s *Session) UpdateChat() error {
 	return nil
 }
 
-func (s *Session) FetchModels() ([]apitypes.Model, error) {
-	models, err := api.GetModels(context.Background(), s.Client, s.Provider)
+func (s *Session) FetchModels(ctx context.Context, providerName string) ([]apitypes.Model, error) {
+	provider := providers.GetByName(providerName)
+	models, err := api.GetModels(context.Background(), s.Client, provider)
 	if err != nil {
 		return nil, fmt.Errorf("fetching models for %q", s.Provider.Name)
 	}

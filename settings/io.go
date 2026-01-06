@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func LoadSettings(settingsPath string) (Settings, error) {
+func Load(settingsPath string) (Settings, error) {
 	data, err := os.ReadFile(settingsPath)
 	var settings Settings
 	if err != nil {

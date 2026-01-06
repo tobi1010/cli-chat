@@ -3,24 +3,21 @@ package session
 import (
 	"cli-chat/chat"
 	"cli-chat/index"
-	"cli-chat/internal/client"
 	"cli-chat/providers"
 	"cli-chat/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"time"
 )
 
 func (s *Session) applySettings(set settings.Settings) {
 	s.AppSettings = set
-	s.Client = client.New(time.Duration(set.Timeout) * time.Second)
 }
 
 func (s *Session) applySavedState(state State) error {
 	if state.LastProvider != "" {
-		lastProv, err := providers.New(*s.Cache, state.LastProvider, state.LastModelID)
+		lastProv, err := providers.New(s.Cache, state.LastProvider, state.LastModelID)
 		if err != nil {
 			return fmt.Errorf(
 				"resolving last provider %q with model %q: %w",
@@ -40,7 +37,7 @@ func loadState(path string) (State, bool, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			return State{}, false, nil
 		}
-		return State{}, false, fmt.Errorf("reading session file %s: %w", path, err)
+		return State{}, false, fmt.Errorf("reading state file %s: %w", path, err)
 	}
 	if len(data) == 0 {
 		return State{}, false, nil
@@ -78,8 +75,8 @@ func (s *Session) loadDb() error {
 
 func (s *Session) toState() State {
 	st := State{
-		LastProvider: s.Provider.Name,
-		LastModelID:  s.Provider.Model.ID,
+		LastProvider: s.Provider,
+		LastModelID:  s.Model,
 	}
 	return st
 

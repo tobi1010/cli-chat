@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cli-chat/commands"
+	// "cli-chat/commands"
 	"cli-chat/paths"
 	"cli-chat/session"
 	"errors"
@@ -10,26 +10,31 @@ import (
 )
 
 func main() {
-	sessionPath, err := paths.SessionPath()
+	paths, err := paths.ResolvePaths()
 	if err != nil {
-		log.Printf("error resolving session path:")
+		log.Printf("error resolving paths:")
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
 
-	s, err := session.LoadOrCreate(sessionPath)
+	s, err := session.Open(paths.SessionPath)
 	if err != nil {
-		log.Printf("error LoadOrCreate %s:", sessionPath)
+		log.Printf("error oopening session %s:", paths.SessionPath)
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
-	_ = s.Save(sessionPath)
+	err = s.Save(paths.SessionPath)
+	if err != nil {
+		log.Printf("error saving session to %s:", paths.SessionPath)
+		unwrapAndPrintErrors(err)
+		os.Exit(1)
+	}
 
-	if err := commands.CommandPrintSettings(s, []string{}); err != nil {
-		log.Printf("error printing settings:")
-		unwrapAndPrintErrors(err)
-		os.Exit(1)
-	}
+	// if err := commands.CommandPrintSettings(s, []string{}); err != nil {
+	// 	log.Printf("error printing settings:")
+	// 	unwrapAndPrintErrors(err)
+	// 	os.Exit(1)
+	// }
 
 	if err := startRepl(s); err != nil {
 		log.Printf("error in repl:")

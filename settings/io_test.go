@@ -23,7 +23,7 @@ func TestSaveAndLoadSettings_Roundtrip(t *testing.T) {
 	err = s.Save(settingsPath)
 	require.NoError(t, err)
 
-	got, err := LoadSettings(settingsPath)
+	got, err := Load(settingsPath)
 	require.NoError(t, err)
 
 	require.Equal(t, s, got)
@@ -36,7 +36,7 @@ func TestLoadSettings_Missing_ReturnsDefaults(t *testing.T) {
 	settingsPath, err := paths.SettingsPath()
 	require.NoError(t, err)
 
-	got, err := LoadSettings(settingsPath)
+	got, err := Load(settingsPath)
 	require.NoError(t, err)
 
 	want := NewDefaultSettings()
@@ -49,6 +49,6 @@ func TestLoadSettings_InvalidJSON_ReturnsError(t *testing.T) {
 	err := os.WriteFile(path, []byte("{not-json"), 0o600)
 	require.NoError(t, err)
 
-	_, err = LoadSettings(path)
+	_, err = Load(path)
 	require.Error(t, err)
 }

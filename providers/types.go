@@ -1,10 +1,10 @@
 package providers
 
 import (
-	"cli-chat/cache"
 	"cli-chat/internal/apitypes"
-	"fmt"
 )
+
+const Default = "openai"
 
 type Provider struct {
 	Name    string         `json:"name"`
@@ -13,14 +13,14 @@ type Provider struct {
 	Model   apitypes.Model `json:"model"`
 }
 
-type Def struct {
+type ProviderDef struct {
 	Name         string
 	EnvKey       string
 	BaseURL      string
 	DefaultModel string
 }
 
-var Registry = map[string]Def{
+var Registry = map[string]ProviderDef{
 	"openai": {
 		Name:         "openai",
 		EnvKey:       "OPENAI_API_KEY",
@@ -35,56 +35,14 @@ var Registry = map[string]Def{
 	},
 }
 
-func NewDefault(cache *cache.Cache) (Provider, error) {
-	return New(cache, "openai", "")
-}
-
-func OpenaiFn(cache *cache.Cache, model string) (Provider, error) {
-	return New(cache, "openai", model)
-}
-
-func AnthropicFn(cache *cache.Cache, model string) (Provider, error) {
-	return New(cache, "anthropic", model)
-}
-
-func New(cache *cache.Cache, name string, model string) (Provider, error) {
+func Def(name string) (ProviderDef, bool) {
 	def, ok := Registry[name]
-	if !ok {
-		return Provider{}, fmt.Errorf("unknown provider %q", name)
+	return def, ok
+}
+func Names() []string {
+	names := make([]string, 0, len(Registry))
+	for k := range Registry {
+		names = append(names, k)
 	}
-
-	p := Provider{
-		Name:    def.Name,
-		Key:     def.EnvKey,
-		BaseURL: def.BaseURL,
-	}
-
-	requested := model
-	if model == "" {
-		model = def.DefaultModel
-	}
-
-	m, ok := cache.Get(def.Name, model)
-	if ok {
-		p.Model = m
-		return p, nil
-	}
-
-	m, ok = cache.Get(def.Name, def.DefaultModel)
-	if !ok {
-		return Provider{}, fmt.Errorf(
-			"unknown %s model %q and default %q not in cache",
-			def.Name,
-			requested,
-			def.DefaultModel,
-		)
-	}
-
-	p.Model = m
-	return p, fmt.Errorf(
-		"unknown %s model %q (using %q)",
-		def.Name,
-		requested,
-		def.DefaultModel,
-	)
+	return names
 }

@@ -1,5 +1,7 @@
 package apitypes
 
+const DefaultModel = "gpt-5"
+
 type Model struct {
 	ID      string
 	Created int64
