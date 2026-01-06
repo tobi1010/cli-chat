@@ -1,12 +1,17 @@
-package apitypes
+package openai
 
-type Model struct {
-	ID      string
-	Created int64
-	Name    string
+type deltaEvent struct {
+	Type           string   `json:"type"`
+	SequenceNumber int      `json:"sequence_number"`
+	Response       struct{} `json:"response"`
+	Delta          string   `json:"delta"`
+}
+type ModelsResponse struct {
+	Object string  `json:"object"`
+	Data   []Model `json:"data"`
 }
 
-type Response struct {
+type OpenAiResponse struct {
 	ID                string `json:"id"`
 	Object            string `json:"object"`
 	CreatedAt         int    `json:"created_at"`

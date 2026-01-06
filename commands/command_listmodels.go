@@ -17,14 +17,13 @@ var (
 		"embedding", "preview", "omni", "transcribe", "davinci", "babbage", "whisper", "search", "sora",
 	}
 
-	dateRegex           = regexp.MustCompile(`-\d{4}-\d{2}-\d{2}$`)
-	legacySnapshotRegEx = regexp.MustCompile(`\d{4}$`)
+	dateRegex = regexp.MustCompile(`-\d{4}-\d{2}-\d{2}$`)
 )
 
 func CommandListModels(s *session.Session, args []string) error {
 	ctx := context.Background()
 
-	models, err := api.GetModels(ctx, s)
+	models, err := api.GetModels(ctx, s.Client, s.Provider)
 	if err != nil {
 		return fmt.Errorf("requesting models: %w", err)
 	}
@@ -35,7 +34,11 @@ func CommandListModels(s *session.Session, args []string) error {
 	})
 
 	for _, model := range models {
-		fmt.Println(baseName(model.ID))
+		if model.Name != "" {
+			fmt.Println(model.Name)
+		} else {
+			fmt.Println(baseName(model.ID))
+		}
 	}
 
 	return nil
@@ -51,10 +54,6 @@ func filterRelevantKeepLatest(models []apitypes.Model) []apitypes.Model {
 		}
 
 		base := baseName(id)
-
-		if legacySnapshotRegEx.MatchString(base) {
-			continue
-		}
 
 		cur, ok := bestByBase[base]
 		if !ok || m.Created > (cur.Created) {

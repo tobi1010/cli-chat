@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"cli-chat/internal/apitypes"
-	"cli-chat/session"
+	"cli-chat/internal/client"
+	"cli-chat/providers"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -40,13 +41,13 @@ type ResponseCompleted struct {
 	Response       OpenAiResponse `json:"response"`
 }
 
-func CreateStreamResponse(ctx context.Context, s *session.Session, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
+func CreateStreamResponse(ctx context.Context, client *client.Client, provider providers.Provider, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
 	payload := openAiPayload{
-		Model:  s.Provider.Model,
+		Model:  provider.Model.ID,
 		Input:  input,
 		Stream: true,
 	}
-	stream, err := doStreamRequest(ctx, s, payload)
+	stream, err := doStreamRequest(ctx, client, provider, payload)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("making stream request: %w", err)
 	}
@@ -114,12 +115,12 @@ func CreateStreamResponse(ctx context.Context, s *session.Session, input string)
 	return outCh, fullCh, errCh, nil
 }
 
-func doStreamRequest(ctx context.Context, s *session.Session, payload openAiPayload) (*Stream, error) {
-	apiKey := os.Getenv(s.Provider.Key)
+func doStreamRequest(ctx context.Context, client *client.Client, provider providers.Provider, payload openAiPayload) (*Stream, error) {
+	apiKey := os.Getenv(provider.Key)
 	if apiKey == "" {
-		return nil, fmt.Errorf("%s not set", s.Provider.Key)
+		return nil, fmt.Errorf("%s not set", provider.Key)
 	}
-	url := s.Provider.BaseURL + "responses"
+	url := provider.BaseURL + "responses"
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling json: %w", err)
@@ -132,7 +133,7 @@ func doStreamRequest(ctx context.Context, s *session.Session, payload openAiPayl
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/event-stream")
 
-	res, err := s.Client.HttpClient.Do(req)
+	res, err := client.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("doing request to %s: %w", url, err)
 	}

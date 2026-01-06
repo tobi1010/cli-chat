@@ -141,3 +141,12 @@ func TestChatsDir(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
+
+func TestCachePath(t *testing.T) {
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	xdg := os.Getenv("XDG_DATA_HOME")
+	want := filepath.Join(xdg, AppDirName, CacheFile)
+	got, err := CachePath()
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}

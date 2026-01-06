@@ -1,6 +1,9 @@
 package session
 
 import (
+	"cli-chat/internal/api"
+	"cli-chat/internal/apitypes"
+	"context"
 	"fmt"
 )
 
@@ -19,4 +22,12 @@ func (s *Session) UpdateChat() error {
 		return fmt.Errorf("saving db: %w", err)
 	}
 	return nil
+}
+
+func (s *Session) FetchModels() ([]apitypes.Model, error) {
+	models, err := api.GetModels(context.Background(), s.Client, s.Provider)
+	if err != nil {
+		return nil, fmt.Errorf("fetching models for %q", s.Provider.Name)
+	}
+	return models, nil
 }

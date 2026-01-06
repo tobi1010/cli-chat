@@ -20,9 +20,14 @@ func (s *Session) applySettings(set settings.Settings) {
 
 func (s *Session) applySavedState(state State) error {
 	if state.LastProvider != "" {
-		lastProv, ok := providers.Get(state.LastProvider, state.LastModel)
-		if !ok {
-			return fmt.Errorf("resolving last provider:")
+		lastProv, err := providers.New(*s.Cache, state.LastProvider, state.LastModelID)
+		if err != nil {
+			return fmt.Errorf(
+				"resolving last provider %q with model %q: %w",
+				state.LastProvider,
+				state.LastModelID,
+				err,
+			)
 		}
 		s.Provider = lastProv
 	}
@@ -74,7 +79,7 @@ func (s *Session) loadDb() error {
 func (s *Session) toState() State {
 	st := State{
 		LastProvider: s.Provider.Name,
-		LastModel:    s.Provider.Model,
+		LastModelID:  s.Provider.Model.ID,
 	}
 	return st
 

@@ -1,6 +1,9 @@
 package index
 
 import (
+	"cli-chat/chat"
+	"cli-chat/paths"
+	"fmt"
 	"time"
 )
 
@@ -10,6 +13,18 @@ func (db *DB) Touch(chatId string, now time.Time) {
 		return
 	}
 	db.Chats = append(db.Chats, ChatMeta{ID: chatId, CreatedAt: now, UpdatedAt: now})
+}
+func (db *DB) GetByID(chatId string) (*chat.Chat, error) {
+	chatsDir, err := paths.ChatsDir()
+	if err != nil {
+		return nil, fmt.Errorf("resolving chats dir: %w", err)
+	}
+	loadedChat, err := chat.Load(chatsDir, chatId)
+	if err != nil {
+		return nil, fmt.Errorf("loading chat: %w", err)
+	}
+	return loadedChat, nil
+
 }
 
 func (db *DB) Find(chatId string) (*ChatMeta, bool) {

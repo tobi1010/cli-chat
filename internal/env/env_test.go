@@ -7,6 +7,8 @@ import (
 
 func TestFindApiKeyCandidates(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "1234")
-	keys := FindApiKeyCandidate()
-	require.Equal(t, keys, []string{"OPENAI_API_KEY"})
+	t.Setenv("ANTHROPIC_API_KEY", "1234")
+	keys := FindApiKeyCandidates()
+	require.Contains(t, keys, "OPENAI_API_KEY")
+	require.Contains(t, keys, "ANTHROPIC_API_KEY")
 }

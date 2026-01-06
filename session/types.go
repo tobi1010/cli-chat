@@ -1,6 +1,7 @@
 package session
 
 import (
+	"cli-chat/cache"
 	"cli-chat/chat"
 	"cli-chat/index"
 	"cli-chat/internal/client"
@@ -13,13 +14,14 @@ import (
 
 type State struct {
 	LastProvider string `json:"last_provider"`
-	LastModel    string `json:"last_model"`
+	LastModelID  string `json:"last_model_id"`
 }
 type Paths struct {
 	SessionPath  string `json:"session_path"`
 	ChatsDir     string `json:"chats_dir"`
 	IndexPath    string `json:"index_path"`
 	SettingsPath string `json:"settings_path"`
+	CachePath    string `json:"cahce_path"`
 }
 
 type Session struct {
@@ -29,15 +31,21 @@ type Session struct {
 	AppSettings settings.Settings
 	DB          *index.DB
 	Paths       Paths
+	Cache       *cache.Cache
 }
 
 func NewDefaultSession() (*Session, error) {
 	s := Session{}
-	s.Provider = providers.NewDefault()
 	s.AppSettings = settings.NewDefaultSettings()
 	s.Client = client.New(time.Duration(s.AppSettings.Timeout) * time.Second)
 	s.Chat = chat.New()
 	s.DB = index.NewDB()
+	s.Cache = cache.New()
+	provider, err := providers.NewDefault(*s.Cache)
+	if err != nil {
+		return nil, fmt.Errorf("default provider: %w", err)
+	}
+	s.Provider = provider
 
 	sessionPath, err := paths.SessionPath()
 	if err != nil {
@@ -55,11 +63,16 @@ func NewDefaultSession() (*Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolving settings path: %w", err)
 	}
+	cachePath, err := paths.CachePath()
+	if err != nil {
+		return nil, fmt.Errorf("resolving cache path: %w", err)
+	}
 	s.Paths = Paths{
 		SessionPath:  sessionPath,
 		ChatsDir:     chatsDir,
 		IndexPath:    indexPath,
 		SettingsPath: settingsPath,
+		CachePath:    cachePath,
 	}
 	return &s, nil
 }

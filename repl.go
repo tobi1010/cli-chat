@@ -18,7 +18,7 @@ func startRepl(s *session.Session) error {
 	cmds := commands.GetCommands()
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Printf("%s>", s.Provider.Model)
+		fmt.Printf("%s>", s.Provider.Model.Name)
 		text, ok, err := readInput(scanner)
 		if err != nil {
 			return fmt.Errorf("reading input: %w", err)
@@ -86,7 +86,7 @@ func handleChat(s *session.Session, text string) error {
 
 	ctx := context.Background()
 	s.Chat.AddMessage(chat.Message{Role: "user", Content: text})
-	stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s, fmt.Sprintf("%v", s.Chat.Conversation))
+	stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s.Client, s.Provider, fmt.Sprintf("%v", s.Chat.Conversation))
 	if err != nil {
 		return fmt.Errorf("receiving stream : %w", err)
 	}

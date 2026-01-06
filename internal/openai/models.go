@@ -2,8 +2,9 @@ package openai
 
 import (
 	"cli-chat/internal/apitypes"
+	"cli-chat/internal/client"
 	"cli-chat/internal/env"
-	"cli-chat/session"
+	"cli-chat/providers"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,31 +12,19 @@ import (
 	"net/http"
 )
 
-type Model struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	Created int    `json:"created"`
-	OwnedBy string `json:"owned_by"`
-}
-
-type ModelsResponse struct {
-	Object string  `json:"object"`
-	Data   []Model `json:"data"`
-}
-
-func GetModels(ctx context.Context, s *session.Session) ([]apitypes.Model, error) {
-	apiKey, err := env.ResolveAPIKey(s.Provider.Key)
+func GetModels(ctx context.Context, client *client.Client, provider providers.Provider) ([]apitypes.Model, error) {
+	apiKey, err := env.ResolveAPIKey(provider.Key)
 	if err != nil {
-		return nil, fmt.Errorf("resloving API key for %s: %w", s.Provider, err)
+		return nil, fmt.Errorf("resloving API key for %s: %w", provider.Name, err)
 	}
-	url := s.Provider.BaseURL + "models"
+	url := provider.BaseURL + "models"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 
-	res, err := s.Client.HttpClient.Do(req)
+	res, err := client.HttpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("doing request to %s: %w", url, err)
 	}

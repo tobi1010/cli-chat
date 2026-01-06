@@ -12,6 +12,7 @@ const (
 	IndexFile    = "index.json"
 	ChatsDirName = "chats"
 	SessionFile  = "session.json"
+	CacheFile    = "modelcache.json"
 )
 
 // returns the base config root (XDG_CONFIG_HOME or ~/.config).
@@ -80,4 +81,13 @@ func ChatsDir() (string, error) {
 		return "", fmt.Errorf("resolving app data dir: %w", err)
 	}
 	return filepath.Join(dataDir, ChatsDirName), nil
+}
+
+// returns the full path of the cache file
+func CachePath() (string, error) {
+	dataDir, err := AppDataDir()
+	if err != nil {
+		return "", fmt.Errorf("resolving app data dir: %w", err)
+	}
+	return filepath.Join(dataDir, CacheFile), nil
 }

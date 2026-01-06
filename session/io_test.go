@@ -19,6 +19,7 @@ type fixture struct {
 	sessionPath  string
 	settingsPath string
 	indexPath    string
+	cachePath    string
 
 	wroteState    State
 	wroteSettings settings.Settings
@@ -45,11 +46,14 @@ func initFirstRun(t *testing.T) fixture {
 	require.NoError(t, err)
 	indexPath, err := paths.IndexPath()
 	require.NoError(t, err)
+	cachePath, err := paths.CachePath()
+	require.NoError(t, err)
 
 	return fixture{
 		sessionPath:  sessionPath,
 		settingsPath: settingsPath,
 		indexPath:    indexPath,
+		cachePath:    cachePath,
 	}
 }
 
@@ -71,13 +75,8 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	st := State{}
 	if opt.writeState {
 		st = State{
-			LastProvider: providers.Provider{
-				Name:    "yet",
-				Key:     "ANOTHER",
-				BaseURL: "test",
-				Model:   "succeeds",
-			},
-		}
+			LastProvider: "last_provider",
+			LastModelID:  "last_model_id"}
 		data, err = json.MarshalIndent(st, "", "  ")
 		require.NoError(t, err)
 		require.NoError(t, fileatomic.Write(fx.sessionPath, data, 0o600))
@@ -207,8 +206,9 @@ func TestLoadOrCreate_SessionMissing(t *testing.T) {
 	require.NotNil(t, s.Client)
 	require.NotNil(t, s.Chat)
 	require.NotNil(t, s.DB)
-
-	require.Equal(t, providers.NewDefault(), s.Provider)
+	prov, err := providers.NewDefault(*s.Cache)
+	require.NoError(t, err)
+	require.Equal(t, prov, s.Provider)
 
 	require.Equal(t, fx.wroteSettings, s.AppSettings)
 
