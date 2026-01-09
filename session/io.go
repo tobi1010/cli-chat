@@ -2,29 +2,30 @@ package session
 
 import (
 	"cli-chat/cache"
-	"cli-chat/chat"
 	"cli-chat/fileatomic"
-	"cli-chat/index"
 	"cli-chat/paths"
-	"cli-chat/settings"
+	"cli-chat/providers"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"time"
 )
 
 func Open(paths paths.Paths) (*Session, error) {
 	s, err := NewDefaultSession()
+
 	if err != nil {
 		return nil, fmt.Errorf("creating default session: %w", err)
 	}
 
-	if err := applyDb(s, paths); err != nil {
-		return nil, fmt.Errorf("applying db to session: %w", err)
-	}
-
 	if err := applySettings(s, paths); err != nil {
 		return nil, fmt.Errorf("applying settings to session: %w", err)
+	}
+
+	if err := applyDb(s, paths); err != nil {
+		return nil, fmt.Errorf("applying db to session: %w", err)
 	}
 
 	lastChat, err := resolveChat(*s.DB, paths)
@@ -38,58 +39,59 @@ func Open(paths paths.Paths) (*Session, error) {
 		return nil, fmt.Errorf("loading state: %w", err)
 	}
 	if !ok {
+		s.ProviderName = providers.Default
+	} else {
+		s.ProviderName = state.LastProvider
 	}
-	s.ProviderName = state.LastProvider
+	requestedModelID := ""
+	if ok {
+		requestedModelID = state.LastModelID
+	}
 
-	cache, err := cache.Load(paths.CachePath)
+	cch, err := cache.Load(paths.CachePath)
 	if err != nil {
-		return nil, fmt.Errorf("loading cache file: %w", err)
+		if errors.Is(err, os.ErrNotExist) {
+			cch = cache.New()
+			if err := cch.Save(s.Paths.CachePath); err != nil {
+				return nil, fmt.Errorf("saving cache file: %w", err)
+			}
+
+		} else {
+			return nil, fmt.Errorf("loading cache file: %w", err)
+		}
 	}
-	s.Cache = cache
-	_, ok = cache.Providers[s.ProviderName]
+	s.Cache = cch
+
+	_, ok = s.Cache.Providers[s.ProviderName]
 	if !ok {
 		s.Cache.Add(s.ProviderName)
 	}
-	c, err := cache.EnsureFresh(context.Background(), paths.CachePath, s.ProviderName, time.Duration(s.AppSettings.TTL)*time.Second, s)
-
-	return nil, nil
-
-}
-
-func Load(sessionPath string) (*Session, error) {
-	s, err := NewDefaultSession()
-	if err != nil {
-		return nil, fmt.Errorf("creating default session: %w", err)
+	if err := s.Cache.EnsureFresh(context.Background(), paths.CachePath, s.ProviderName, time.Duration(s.AppSettings.TTL)*time.Second, s); err != nil {
+		return nil, fmt.Errorf("refreshing cache: %w", err)
 	}
 
-	set, err := settings.LoadOrCreate()
-	if err != nil {
-		return nil, fmt.Errorf("load or create settings: %w", err)
+	lastModel, ok := s.Cache.Get(s.ProviderName, requestedModelID)
+	if !ok {
+		def, ok := providers.Get(s.ProviderName)
+		if !ok {
+			return nil, fmt.Errorf("resolving provider %q", s.ProviderName)
+		}
+		lastModel, ok = s.Cache.Get(s.ProviderName, def.DefaultModel)
+		if !ok {
+			return nil, fmt.Errorf("resolving default model %s for provider %s", def.DefaultModel, s.ProviderName)
+		}
 	}
-	s.applySettings(set)
-
-	state, ok, err := loadState(sessionPath)
-	if err != nil {
-		return nil, fmt.Errorf("loading session file: %w", err)
-	}
-	if ok {
-		s.applySavedState(state)
-	}
-
-	if err := s.loadDb(); err != nil {
-		return nil, fmt.Errorf("loading database: %w", err)
-	}
-
-	lastChatId := s.DB.GetLastChatId()
-	if err := s.loadChat(lastChatId); err != nil {
-		return nil, fmt.Errorf("loading chat: %w", err)
-	}
+	s.ModelID = lastModel.ID
+	s.ModelLabel = lastModel.Name
 
 	return s, nil
+
 }
 
 func (s *Session) Save(sessionPath string) error {
-	st := s.toState()
+	st := State{
+		LastProvider: s.ProviderName, LastModelID: s.ModelID,
+	}
 	data, err := json.MarshalIndent(st, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling json: %w", err)
@@ -99,44 +101,4 @@ func (s *Session) Save(sessionPath string) error {
 	}
 
 	return nil
-}
-
-func applyDb(s *Session, paths paths.Paths) error {
-	db, err := index.Load(paths.IndexPath)
-	if err != nil {
-		//create new db
-		db = index.NewDB()
-		s.DB = db
-		err := db.Save(paths.IndexPath)
-		if err != nil {
-			return fmt.Errorf("saving db file: %w", err)
-		}
-	}
-	return nil
-}
-func applySettings(s *Session, paths paths.Paths) error {
-	set, err := settings.Load(paths.SettingsPath)
-	if err != nil {
-		//apply default settings
-		set = settings.NewDefaultSettings()
-		s.AppSettings = set
-		err := s.AppSettings.Save(paths.SettingsPath)
-		if err != nil {
-			return fmt.Errorf("saving settings file: %w", err)
-		}
-	}
-	s.AppSettings = set
-	return nil
-}
-func resolveChat(db index.DB, paths paths.Paths) (*chat.Chat, error) {
-	lastChatID := db.GetLastChatId()
-	if lastChatID == "" {
-		return chat.New(), nil
-	} else {
-		c, err := chat.Load(paths.ChatsDir, lastChatID)
-		if err != nil {
-			return nil, fmt.Errorf("readign last chat, id: %s: %w", lastChatID, err)
-		}
-		return c, nil
-	}
 }

@@ -9,29 +9,20 @@ import (
 func CommandSwitchProvider(s *session.Session, args []string) error {
 	if len(args) < 1 {
 		fmt.Printf("usage: /switch-provider <name>\n")
-		return nil
-	}
-
-	if args[0] == "" {
 		fmt.Println("switching to default provider...")
-
-		prov, err := providers.NewDefault(*s.Cache)
-		if err != nil {
-			return fmt.Errorf("switching to default provider")
-		}
-		s.Provider = prov
-
-	}
-	name := args[0]
-	prov, err := providers.New(*s.Cache, args[0], "")
-	if err != nil {
-		return fmt.Errorf("unknown provider: %s", name)
-	}
-	s.Provider = prov
-
-	if err := s.Save(s.Paths.SessionPath); err != nil {
-		return fmt.Errorf("saving session: %w", err)
+		s.ProviderName, s.ModelID = providers.DefaultNameAndModelID()
+		return s.Save(s.Paths.SessionPath)
 	}
 
-	return nil
+	def, ok := providers.Get(args[0])
+	if !ok {
+		fmt.Printf("unknown provider: %s\n", args[0])
+		s.ProviderName, s.ModelID = providers.DefaultNameAndModelID()
+		return s.Save(s.Paths.SessionPath)
+	}
+
+	s.ProviderName = def.Name
+	s.ModelID = def.DefaultModel
+
+	return s.Save(s.Paths.SessionPath)
 }

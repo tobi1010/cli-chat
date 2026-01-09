@@ -23,7 +23,7 @@ var (
 func CommandListModels(s *session.Session, args []string) error {
 	ctx := context.Background()
 
-	models, err := api.GetModels(ctx, s.Client, s.Provider)
+	models, err := api.GetModels(ctx, s.Client, s.ProviderName)
 	if err != nil {
 		return fmt.Errorf("requesting models: %w", err)
 	}

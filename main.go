@@ -10,20 +10,20 @@ import (
 )
 
 func main() {
-	paths, err := paths.ResolvePaths()
+	pths, err := paths.ResolvePaths()
 	if err != nil {
 		log.Printf("error resolving paths:")
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
 
-	s, err := session.Open(paths.SessionPath)
+	s, err := session.Open(pths)
 	if err != nil {
 		log.Printf("error oopening session %s:", paths.SessionPath)
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
-	err = s.Save(paths.SessionPath)
+	err = s.Save(pths.SessionPath)
 	if err != nil {
 		log.Printf("error saving session to %s:", paths.SessionPath)
 		unwrapAndPrintErrors(err)

@@ -17,6 +17,8 @@ func ResolvePaths() (Paths, error) {
 	if err != nil {
 		return Paths{}, fmt.Errorf("resolving state path: %w", err)
 	}
+	p.StatePath = statePath
+
 	cachePath, err := CachePath()
 	if err != nil {
 		return Paths{}, fmt.Errorf("resolving cache path: %w", err)

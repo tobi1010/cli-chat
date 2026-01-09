@@ -12,8 +12,12 @@ import (
 	"net/http"
 )
 
-func GetModels(ctx context.Context, client *client.Client, provider providers.Provider) ([]apitypes.Model, error) {
-	apiKey, err := env.ResolveAPIKey(provider.Key)
+func GetModels(ctx context.Context, client *client.Client, providerName string) ([]apitypes.Model, error) {
+	provider, ok := providers.Get(providerName)
+	if !ok {
+		return nil, fmt.Errorf("unknown provider %q", providerName)
+	}
+	apiKey, err := env.ResolveAPIKey(provider.EnvKey)
 	if err != nil {
 		return nil, fmt.Errorf("resloving API key for %s: %w", provider.Name, err)
 	}

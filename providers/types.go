@@ -1,26 +1,15 @@
 package providers
 
-import (
-	"cli-chat/internal/apitypes"
-)
-
 const Default = "openai"
 
 type Provider struct {
-	Name    string         `json:"name"`
-	Key     string         `json:"key"`
-	BaseURL string         `json:"baseurl"`
-	Model   apitypes.Model `json:"model"`
-}
-
-type ProviderDef struct {
 	Name         string
 	EnvKey       string
 	BaseURL      string
 	DefaultModel string
 }
 
-var Registry = map[string]ProviderDef{
+var Registry = map[string]Provider{
 	"openai": {
 		Name:         "openai",
 		EnvKey:       "OPENAI_API_KEY",
@@ -35,10 +24,15 @@ var Registry = map[string]ProviderDef{
 	},
 }
 
-func Def(name string) (ProviderDef, bool) {
+func Get(name string) (Provider, bool) {
 	def, ok := Registry[name]
 	return def, ok
 }
+
+func DefaultNameAndModelID() (string, string) {
+	return Registry[Default].Name, Registry[Default].DefaultModel
+}
+
 func Names() []string {
 	names := make([]string, 0, len(Registry))
 	for k := range Registry {

@@ -11,5 +11,8 @@ func toApiModel(model Model) apitypes.Model {
 
 }
 func toApiResponse(res OpenAiResponse) apitypes.Response {
-	return apitypes.Response{}
+	return apitypes.Response{
+		ID:    res.ID,
+		Model: res.Model,
+	}
 }

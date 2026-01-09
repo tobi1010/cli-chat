@@ -1,9 +1,10 @@
 package commands
 
 import (
-	"cli-chat/providers"
 	"cli-chat/session"
+	"context"
 	"fmt"
+	"time"
 )
 
 func CommandSwitchModel(s *session.Session, args []string) error {
@@ -11,11 +12,18 @@ func CommandSwitchModel(s *session.Session, args []string) error {
 		fmt.Printf("usage: /switch-model <name>\n")
 		return nil
 	}
-	prov, err := providers.New(*s.Cache, s.Provider.Name, args[0])
-	if err != nil {
-		return fmt.Errorf("unknown model %s for provider %s: %w", args[0], s.Provider.Name, err)
+	model, ok := s.Cache.Get(s.ProviderName, args[0])
+	if !ok {
+		err := s.Cache.EnsureFresh(context.Background(), s.Paths.CachePath, s.ProviderName, time.Duration(s.AppSettings.TTL)*time.Second, s)
+		if err != nil {
+			return fmt.Errorf("refreshing cache: %w", err)
+		}
+		model, ok = s.Cache.Get(s.ProviderName, args[0])
+		if !ok {
+			return fmt.Errorf("unknown model: %q", args[0])
+		}
 	}
-	s.Provider = prov
+	s.ModelID = model.ID
 
 	if err := s.Save(s.Paths.SessionPath); err != nil {
 		return fmt.Errorf("saving session: %w", err)

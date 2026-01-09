@@ -26,10 +26,13 @@ func (s *Session) UpdateChat() error {
 }
 
 func (s *Session) FetchModels(ctx context.Context, providerName string) ([]apitypes.Model, error) {
-	provider := providers.GetByName(providerName)
-	models, err := api.GetModels(context.Background(), s.Client, provider)
+	provider, ok := providers.Get(providerName)
+	if !ok {
+		return nil, fmt.Errorf("unknown provier: %q", provider)
+	}
+	models, err := api.GetModels(context.Background(), s.Client, provider.Name)
 	if err != nil {
-		return nil, fmt.Errorf("fetching models for %q", s.Provider.Name)
+		return nil, fmt.Errorf("fetching models for %q", s.ProviderName)
 	}
 	return models, nil
 }

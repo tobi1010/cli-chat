@@ -3,7 +3,7 @@ package session
 import (
 	"cli-chat/chat"
 	"cli-chat/index"
-	"cli-chat/providers"
+	"cli-chat/paths"
 	"cli-chat/settings"
 	"encoding/json"
 	"errors"
@@ -11,24 +11,46 @@ import (
 	"os"
 )
 
-func (s *Session) applySettings(set settings.Settings) {
-	s.AppSettings = set
+func applyDb(s *Session, paths paths.Paths) error {
+	db, err := index.Load(paths.IndexPath)
+	if err != nil {
+		//create new db
+		db = index.NewDB()
+		s.DB = db
+		if err := db.Save(paths.IndexPath); err != nil {
+			return fmt.Errorf("saving db file: %w", err)
+		}
+	}
+	s.DB = db
+	return nil
 }
 
-func (s *Session) applySavedState(state State) error {
-	if state.LastProvider != "" {
-		lastProv, err := providers.New(s.Cache, state.LastProvider, state.LastModelID)
+func applySettings(s *Session, paths paths.Paths) error {
+	set, err := settings.Load(paths.SettingsPath)
+	if err != nil {
+		//apply default settings
+		set = settings.NewDefaultSettings()
+		s.AppSettings = set
+		err := s.AppSettings.Save(paths.SettingsPath)
 		if err != nil {
-			return fmt.Errorf(
-				"resolving last provider %q with model %q: %w",
-				state.LastProvider,
-				state.LastModelID,
-				err,
-			)
+			return fmt.Errorf("saving settings file: %w", err)
 		}
-		s.Provider = lastProv
 	}
+	s.AppSettings = set
 	return nil
+}
+
+func resolveChat(db index.DB, paths paths.Paths) (*chat.Chat, error) {
+	lastChatID := db.GetLastChatId()
+	if lastChatID == "" {
+		return chat.New(), nil
+	} else {
+		c, err := chat.Load(paths.ChatsDir, lastChatID)
+		if err != nil {
+			return nil, fmt.Errorf("readign last chat, id: %s: %w", lastChatID, err)
+		}
+		return c, nil
+	}
 }
 
 func loadState(path string) (State, bool, error) {
@@ -51,19 +73,6 @@ func loadState(path string) (State, bool, error) {
 
 }
 
-func (s *Session) loadChat(chatId string) error {
-	if chatId == "" {
-		s.Chat = chat.New()
-		return nil
-	}
-	c, err := chat.Load(s.Paths.ChatsDir, chatId)
-	if err != nil {
-		return fmt.Errorf("load chat %q: %w", chatId, err)
-	}
-	s.Chat = c
-	return nil
-}
-
 func (s *Session) loadDb() error {
 	db, err := index.Load(s.Paths.IndexPath)
 	if err != nil {
@@ -71,13 +80,4 @@ func (s *Session) loadDb() error {
 	}
 	s.DB = db
 	return nil
-}
-
-func (s *Session) toState() State {
-	st := State{
-		LastProvider: s.Provider,
-		LastModelID:  s.Model,
-	}
-	return st
-
 }

@@ -9,6 +9,7 @@ import (
 	"cli-chat/paths"
 	"cli-chat/providers"
 	"cli-chat/settings"
+	"fmt"
 	"time"
 )
 
@@ -26,12 +27,18 @@ type Session struct {
 	Paths        paths.Paths
 	Cache        *cache.Cache
 
-	Client *client.Client
+	Client     *client.Client
+	ModelLabel string
 }
 
 func NewDefaultSession() (*Session, error) {
 	s := Session{}
 
+	p, err := paths.ResolvePaths()
+	if err != nil {
+		return nil, fmt.Errorf("resolving paths: %w", err)
+	}
+	s.Paths = p
 	s.AppSettings = settings.NewDefaultSettings()
 	s.Chat = chat.New()
 	s.DB = index.NewDB()
@@ -39,6 +46,7 @@ func NewDefaultSession() (*Session, error) {
 	s.ProviderName = providers.Default
 	s.ModelID = apitypes.DefaultModel
 	s.Client = client.New(time.Duration(60 * time.Second))
+	s.ModelLabel = apitypes.DefaultModel
 
 	return &s, nil
 }

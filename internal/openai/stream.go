@@ -41,9 +41,13 @@ type ResponseCompleted struct {
 	Response       OpenAiResponse `json:"response"`
 }
 
-func CreateStreamResponse(ctx context.Context, client *client.Client, provider providers.Provider, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
+func CreateStreamResponse(ctx context.Context, client *client.Client, providerName string, modelID string, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
+	provider, ok := providers.Get(providerName)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("unknown provider %q", providerName)
+	}
 	payload := openAiPayload{
-		Model:  provider.Model.ID,
+		Model:  modelID,
 		Input:  input,
 		Stream: true,
 	}
@@ -116,9 +120,9 @@ func CreateStreamResponse(ctx context.Context, client *client.Client, provider p
 }
 
 func doStreamRequest(ctx context.Context, client *client.Client, provider providers.Provider, payload openAiPayload) (*Stream, error) {
-	apiKey := os.Getenv(provider.Key)
+	apiKey := os.Getenv(provider.EnvKey)
 	if apiKey == "" {
-		return nil, fmt.Errorf("%s not set", provider.Key)
+		return nil, fmt.Errorf("%s not set", provider.EnvKey)
 	}
 	url := provider.BaseURL + "responses"
 	b, err := json.Marshal(payload)
