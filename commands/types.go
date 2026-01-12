@@ -34,7 +34,7 @@ func GetCommands() map[string]CliCommand {
 		},
 		"list-chats": {
 			Name:        "list-chats",
-			Description: "",
+			Description: "list stored chats",
 			Callback:    CommandListChats,
 		},
 		"list-models": {
@@ -59,7 +59,7 @@ func GetCommands() map[string]CliCommand {
 		},
 		"usage": {
 			Name:        "usage",
-			Description: "",
+			Description: "not implemented",
 			Callback:    CommandUsage,
 		},
 		"help": {
@@ -76,6 +76,21 @@ func GetCommands() map[string]CliCommand {
 			Name:        "set-apikey",
 			Description: "set api key for provider",
 			Callback:    CommandSetApiKey,
+		},
+		"set-ttl": {
+			Name:        "set-ttl",
+			Description: "set time to live for cahce",
+			Callback:    CommandSetTTL,
+		},
+		"set-default-model": {
+			Name:        "set-default-model",
+			Description: "set the default model",
+			Callback:    CommandSetDefautlModel,
+		},
+		"set-default-provider": {
+			Name:        "set-default-provider",
+			Description: "set the default provider",
+			Callback:    CommandSetDefautlProvider,
 		},
 	}
 }

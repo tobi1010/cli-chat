@@ -3,6 +3,7 @@ package openai
 import (
 	"bufio"
 	"bytes"
+	"cli-chat/chat"
 	"cli-chat/internal/apitypes"
 	"cli-chat/internal/client"
 	"cli-chat/providers"
@@ -41,14 +42,14 @@ type ResponseCompleted struct {
 	Response       OpenAiResponse `json:"response"`
 }
 
-func CreateStreamResponse(ctx context.Context, client *client.Client, providerName string, modelID string, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
+func CreateStreamResponse(ctx context.Context, client *client.Client, providerName string, modelID string, systemPrompt string, messages []chat.Message) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
 	provider, ok := providers.Get(providerName)
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("unknown provider %q", providerName)
 	}
 	payload := openAiPayload{
 		Model:  modelID,
-		Input:  input,
+		Input:  messages,
 		Stream: true,
 	}
 	stream, err := doStreamRequest(ctx, client, provider, payload)

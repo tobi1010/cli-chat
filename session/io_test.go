@@ -16,10 +16,7 @@ import (
 )
 
 type fixture struct {
-	sessionPath  string
-	settingsPath string
-	indexPath    string
-	cachePath    string
+	Paths paths.Paths
 
 	wroteState    State
 	wroteSettings settings.Settings
@@ -48,12 +45,17 @@ func initFirstRun(t *testing.T) fixture {
 	require.NoError(t, err)
 	cachePath, err := paths.CachePath()
 	require.NoError(t, err)
+	chatsDir, err := paths.ChatsDir()
+	require.NoError(t, err)
 
 	return fixture{
-		sessionPath:  sessionPath,
-		settingsPath: settingsPath,
-		indexPath:    indexPath,
-		cachePath:    cachePath,
+		Paths: paths.Paths{
+			SessionPath:  sessionPath,
+			SettingsPath: settingsPath,
+			IndexPath:    indexPath,
+			CachePath:    cachePath,
+			ChatsDir:     chatsDir,
+		},
 	}
 }
 
@@ -70,16 +72,16 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	}
 	data, err := json.MarshalIndent(set, "", "  ")
 	require.NoError(t, err)
-	require.NoError(t, fileatomic.Write(fx.settingsPath, data, 0o600))
+	require.NoError(t, fileatomic.Write(fx.Paths.SettingsPath, data, 0o600))
 
 	st := State{}
 	if opt.writeState {
 		st = State{
-			LastProvider: "last_provider",
-			LastModelID:  "last_model_id"}
+			LastProvider: "openai",
+			LastModelID:  "gpt-5.2"}
 		data, err = json.MarshalIndent(st, "", "  ")
 		require.NoError(t, err)
-		require.NoError(t, fileatomic.Write(fx.sessionPath, data, 0o600))
+		require.NoError(t, fileatomic.Write(fx.Paths.SessionPath, data, 0o600))
 	}
 
 	chatsDir, err := paths.ChatsDir()
@@ -96,7 +98,7 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 			{ID: "2", CreatedAt: created2, UpdatedAt: updated2},
 		},
 	}
-	require.NoError(t, db.Save(fx.indexPath))
+	require.NoError(t, db.Save(fx.Paths.IndexPath))
 
 	chat1 := chat.Chat{
 		ID:        "1",
@@ -133,37 +135,37 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 	return fx
 }
 
-func TestLoadOrCreate_FirstRun(t *testing.T) {
+func TestOpen_FirstRun(t *testing.T) {
 	fx := initFirstRun(t)
 
-	s, err := LoadOrCreate(fx.sessionPath)
+	s, err := Open(fx.Paths)
 	require.NoError(t, err)
 
 	require.NotNil(t, s.Client)
 	require.NotNil(t, s.Chat)
 	require.NotNil(t, s.DB)
 
-	_, err = os.Stat(fx.settingsPath)
+	_, err = os.Stat(fx.Paths.SettingsPath)
 	require.NoError(t, err)
 
-	_, err = os.Stat(fx.sessionPath)
+	_, err = os.Stat(fx.Paths.SessionPath)
 	require.ErrorIs(t, err, os.ErrNotExist)
 
-	_, err = os.Stat(fx.indexPath)
+	_, err = os.Stat(fx.Paths.IndexPath)
 	require.ErrorIs(t, err, os.ErrNotExist)
 }
 
-func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
+func TestOpen_LoadsExistingFiles(t *testing.T) {
 	fx := initWithExistingFiles(t, Opts{writeState: true, writeChat1: true, writeChat2: true})
 
-	s, err := LoadOrCreate(fx.sessionPath)
+	s, err := Open(fx.Paths)
 	require.NoError(t, err)
 
 	require.NotNil(t, s.Client)
 	require.NotNil(t, s.Chat)
 	require.NotNil(t, s.DB)
 
-	require.Equal(t, fx.wroteState.LastProvider, s.Provider)
+	require.Equal(t, fx.wroteState.LastProvider, s.ProviderName)
 
 	require.Equal(t, fx.wroteSettings, s.AppSettings)
 
@@ -193,22 +195,20 @@ func TestLoadOrCreate_LoadsExistingFiles(t *testing.T) {
 	require.True(t, have2, "db should contain chat meta id=2")
 }
 
-func TestLoadOrCreate_ChatMissing(t *testing.T) {
+func TestOpen_ChatMissing(t *testing.T) {
 	fx := initWithExistingFiles(t, Opts{writeState: true, writeChat1: false, writeChat2: true})
-	_, err := LoadOrCreate(fx.sessionPath)
+	_, err := Open(fx.Paths)
 	require.Error(t, err)
 }
 
-func TestLoadOrCreate_SessionMissing(t *testing.T) {
+func TestOpen_SessionMissing(t *testing.T) {
 	fx := initWithExistingFiles(t, Opts{writeState: false, writeChat1: true, writeChat2: true})
-	s, err := LoadOrCreate(fx.sessionPath)
+	s, err := Open(fx.Paths)
 	require.NoError(t, err)
 	require.NotNil(t, s.Client)
 	require.NotNil(t, s.Chat)
 	require.NotNil(t, s.DB)
-	prov, err := providers.NewDefault(*s.Cache)
-	require.NoError(t, err)
-	require.Equal(t, prov, s.Provider)
+	require.Equal(t, providers.Default, s.ProviderName)
 
 	require.Equal(t, fx.wroteSettings, s.AppSettings)
 

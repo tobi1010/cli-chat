@@ -28,9 +28,9 @@ func (s *Session) UpdateChat() error {
 func (s *Session) FetchModels(ctx context.Context, providerName string) ([]apitypes.Model, error) {
 	provider, ok := providers.Get(providerName)
 	if !ok {
-		return nil, fmt.Errorf("unknown provier: %q", provider)
+		return nil, fmt.Errorf("unknown provider: %q", provider)
 	}
-	models, err := api.GetModels(context.Background(), s.Client, provider.Name)
+	models, err := api.GetModels(context.Background(), s.Client, provider.ID)
 	if err != nil {
 		return nil, fmt.Errorf("fetching models for %q", s.ProviderName)
 	}

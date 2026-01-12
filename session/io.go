@@ -2,6 +2,7 @@ package session
 
 import (
 	"cli-chat/cache"
+	"cli-chat/debug"
 	"cli-chat/fileatomic"
 	"cli-chat/paths"
 	"cli-chat/providers"
@@ -33,17 +34,26 @@ func Open(paths paths.Paths) (*Session, error) {
 		return nil, fmt.Errorf("resloving last chat: %w", err)
 	}
 	s.Chat = lastChat
+	s.ProviderName = providers.Default
 
-	state, ok, err := loadState(paths.StatePath)
+	if s.AppSettings.DefaultProvider != "" {
+		s.ProviderName = s.AppSettings.DefaultProvider
+	}
+
+	requestedModelID := ""
+	if s.AppSettings.DefaultModel != "" {
+		requestedModelID = s.AppSettings.DefaultModel
+	}
+
+	state, ok, err := loadState(paths.SessionPath)
 	if err != nil {
 		return nil, fmt.Errorf("loading state: %w", err)
 	}
-	if !ok {
-		s.ProviderName = providers.Default
-	} else {
-		s.ProviderName = state.LastProvider
+	if ok {
+		if _, exists := providers.Get(state.LastProvider); exists {
+			s.ProviderName = state.LastProvider
+		}
 	}
-	requestedModelID := ""
 	if ok {
 		requestedModelID = state.LastModelID
 	}
@@ -55,7 +65,6 @@ func Open(paths paths.Paths) (*Session, error) {
 			if err := cch.Save(s.Paths.CachePath); err != nil {
 				return nil, fmt.Errorf("saving cache file: %w", err)
 			}
-
 		} else {
 			return nil, fmt.Errorf("loading cache file: %w", err)
 		}
@@ -83,6 +92,7 @@ func Open(paths paths.Paths) (*Session, error) {
 	}
 	s.ModelID = lastModel.ID
 	s.ModelLabel = lastModel.Name
+	debug.Dump("Session:", s)
 
 	return s, nil
 

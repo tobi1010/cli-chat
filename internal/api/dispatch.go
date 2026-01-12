@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cli-chat/chat"
 	"cli-chat/internal/anthropic"
 	"cli-chat/internal/apitypes"
 	"cli-chat/internal/client"
@@ -19,12 +20,12 @@ func GetModels(ctx context.Context, client *client.Client, providerName string) 
 		return nil, fmt.Errorf("unsupported provider: %s", providerName)
 	}
 }
-func CreateStreamResponse(ctx context.Context, client *client.Client, providerName string, modelID, input string) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
+func CreateStreamResponse(ctx context.Context, client *client.Client, providerName string, modelID, systemPrompt string, messages []chat.Message) (<-chan string, <-chan apitypes.Response, <-chan error, error) {
 	switch providerName {
 	case "openai":
-		return openai.CreateStreamResponse(ctx, client, providerName, modelID, input)
+		return openai.CreateStreamResponse(ctx, client, providerName, modelID, systemPrompt, messages)
 	case "anthropic":
-		return anthropic.CreateStreamResponse(ctx, client, providerName, modelID, input)
+		return anthropic.CreateStreamResponse(ctx, client, providerName, modelID, systemPrompt, messages)
 	default:
 		return nil, nil, nil, fmt.Errorf("unsupported provider: %s", providerName)
 	}

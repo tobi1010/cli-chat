@@ -3,6 +3,7 @@ package providers
 const Default = "openai"
 
 type Provider struct {
+	ID           string
 	Name         string
 	EnvKey       string
 	BaseURL      string
@@ -11,21 +12,23 @@ type Provider struct {
 
 var Registry = map[string]Provider{
 	"openai": {
-		Name:         "openai",
+		ID:           "openai",
+		Name:         "OpenAi",
 		EnvKey:       "OPENAI_API_KEY",
 		BaseURL:      "https://api.openai.com/v1/",
 		DefaultModel: "gpt-5",
 	},
 	"anthropic": {
-		Name:         "anthropic",
+		ID:           "anthropic",
+		Name:         "Anthropic",
 		EnvKey:       "ANTHROPIC_API_KEY",
 		BaseURL:      "https://api.anthropic.com/v1/",
 		DefaultModel: "claude-opus-4-5-20251101",
 	},
 }
 
-func Get(name string) (Provider, bool) {
-	def, ok := Registry[name]
+func Get(id string) (Provider, bool) {
+	def, ok := Registry[id]
 	return def, ok
 }
 

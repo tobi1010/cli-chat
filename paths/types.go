@@ -3,7 +3,6 @@ package paths
 import "fmt"
 
 type Paths struct {
-	StatePath    string
 	CachePath    string
 	IndexPath    string
 	SettingsPath string
@@ -13,11 +12,6 @@ type Paths struct {
 
 func ResolvePaths() (Paths, error) {
 	p := Paths{}
-	statePath, err := StatePath()
-	if err != nil {
-		return Paths{}, fmt.Errorf("resolving state path: %w", err)
-	}
-	p.StatePath = statePath
 
 	cachePath, err := CachePath()
 	if err != nil {

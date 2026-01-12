@@ -2,6 +2,7 @@ package session
 
 import (
 	"cli-chat/chat"
+	"cli-chat/debug"
 	"cli-chat/index"
 	"cli-chat/paths"
 	"cli-chat/settings"
@@ -36,7 +37,9 @@ func applySettings(s *Session, paths paths.Paths) error {
 			return fmt.Errorf("saving settings file: %w", err)
 		}
 	}
+	debug.Dump(set)
 	s.AppSettings = set
+	s.AppSettings.Save(paths.SettingsPath)
 	return nil
 }
 
@@ -47,7 +50,7 @@ func resolveChat(db index.DB, paths paths.Paths) (*chat.Chat, error) {
 	} else {
 		c, err := chat.Load(paths.ChatsDir, lastChatID)
 		if err != nil {
-			return nil, fmt.Errorf("readign last chat, id: %s: %w", lastChatID, err)
+			return nil, fmt.Errorf("reading last chat, id: %s: %w", lastChatID, err)
 		}
 		return c, nil
 	}

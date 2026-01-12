@@ -3,11 +3,11 @@ package session
 import (
 	"cli-chat/cache"
 	"cli-chat/chat"
+	"cli-chat/debug"
 	"cli-chat/index"
 	"cli-chat/internal/apitypes"
 	"cli-chat/internal/client"
 	"cli-chat/paths"
-	"cli-chat/providers"
 	"cli-chat/settings"
 	"fmt"
 	"time"
@@ -27,8 +27,9 @@ type Session struct {
 	Paths        paths.Paths
 	Cache        *cache.Cache
 
-	Client     *client.Client
-	ModelLabel string
+	Client       *client.Client
+	ModelLabel   string
+	SystemPrompt string
 }
 
 func NewDefaultSession() (*Session, error) {
@@ -43,10 +44,12 @@ func NewDefaultSession() (*Session, error) {
 	s.Chat = chat.New()
 	s.DB = index.NewDB()
 	s.Cache = cache.New()
-	s.ProviderName = providers.Default
+	s.ProviderName = s.AppSettings.DefaultProvider
 	s.ModelID = apitypes.DefaultModel
 	s.Client = client.New(time.Duration(60 * time.Second))
-	s.ModelLabel = apitypes.DefaultModel
+	s.ModelLabel = s.AppSettings.DefaultModel
+	s.SystemPrompt = ""
 
+	debug.Dump("default session:", s)
 	return &s, nil
 }

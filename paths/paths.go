@@ -92,13 +92,3 @@ func CachePath() (string, error) {
 	}
 	return filepath.Join(dataDir, CacheFile), nil
 }
-
-func StatePath() (string, error) {
-	dataDir, err := AppDataDir()
-	statePath := filepath.Join(dataDir, SessionFile+".json")
-
-	if err != nil {
-		return "", fmt.Errorf("resolving app data dir: %w", err)
-	}
-	return statePath, nil
-}

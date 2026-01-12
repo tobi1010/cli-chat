@@ -14,9 +14,9 @@ func TestUpdateChat(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 
-	sessionPath, err := paths.SessionPath()
+	p, err := paths.ResolvePaths()
 	require.NoError(t, err)
-	s, err := LoadOrCreate(sessionPath)
+	s, err := Open(p)
 	require.NoError(t, err)
 	require.NotNil(t, s)
 	require.NotNil(t, s.Chat)

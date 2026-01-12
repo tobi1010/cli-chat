@@ -2,14 +2,20 @@ package main
 
 import (
 	// "cli-chat/commands"
+	"cli-chat/debug"
 	"cli-chat/paths"
 	"cli-chat/session"
 	"errors"
+	"flag"
 	"log"
 	"os"
 )
 
 func main() {
+	debugFlag := flag.Bool("debug", false, "enable debug dumps")
+	flag.Parse()
+	debug.Set(*debugFlag)
+
 	pths, err := paths.ResolvePaths()
 	if err != nil {
 		log.Printf("error resolving paths:")
@@ -19,13 +25,13 @@ func main() {
 
 	s, err := session.Open(pths)
 	if err != nil {
-		log.Printf("error oopening session %s:", paths.SessionPath)
+		log.Printf("error oopening session %s:", pths.SessionPath)
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
 	err = s.Save(pths.SessionPath)
 	if err != nil {
-		log.Printf("error saving session to %s:", paths.SessionPath)
+		log.Printf("error saving session to %s:", pths.SessionPath)
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}

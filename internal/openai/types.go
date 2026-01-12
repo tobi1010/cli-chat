@@ -1,9 +1,11 @@
 package openai
 
+import "cli-chat/chat"
+
 type openAiPayload struct {
-	Model  string `json:"model"`
-	Input  string `json:"input"`
-	Stream bool   `json:"stream"`
+	Model  string         `json:"model"`
+	Input  []chat.Message `json:"input"`
+	Stream bool           `json:"stream"`
 }
 
 type Model struct {

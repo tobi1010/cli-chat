@@ -7,6 +7,7 @@ import (
 	"cli-chat/internal/api"
 	"cli-chat/internal/apitypes"
 	"cli-chat/session"
+	"cli-chat/spinner"
 	"context"
 	"errors"
 	"fmt"
@@ -34,7 +35,7 @@ func startRepl(s *session.Session) error {
 			if errors.Is(err, commands.ErrExitRequested) {
 				return nil
 			}
-			return err
+			fmt.Println(err.Error())
 		}
 		if handled {
 			continue
@@ -43,7 +44,6 @@ func startRepl(s *session.Session) error {
 			return fmt.Errorf("handling chat: %w", err)
 		}
 
-		fmt.Println()
 	}
 }
 
@@ -83,10 +83,10 @@ func handleCommand(s *session.Session, cmds map[string]commands.CliCommand, text
 }
 
 func handleChat(s *session.Session, text string) error {
-
+	fmt.Println(strings.Repeat("-", s.AppSettings.Columns))
 	ctx := context.Background()
 	s.Chat.AddMessage(chat.Message{Role: "user", Content: text})
-	stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s.Client, s.ProviderName, s.ModelID, fmt.Sprintf("%v", s.Chat.Conversation))
+	stream, fullCh, errCh, err := api.CreateStreamResponse(ctx, s.Client, s.ProviderName, s.ModelID, s.SystemPrompt, s.Chat.Conversation)
 	if err != nil {
 		return fmt.Errorf("receiving stream : %w", err)
 	}
@@ -102,15 +102,19 @@ func handleChat(s *session.Session, text string) error {
 		return fmt.Errorf("updating chat: %w", err)
 	}
 	fmt.Printf("\n        response by: %s\n", fullResponse.Model)
+
+	fmt.Println(strings.Repeat("-", s.AppSettings.Columns))
 	return nil
 }
 
 func consumeStream(stream <-chan string, fullCh <-chan apitypes.Response, errCh <-chan error, printColumns int) (apitypes.Response, error) {
 	lineLength := 0
 	streamOpen := true
+	stopSpinner := spinner.Spin()
 	for streamOpen {
 		select {
 		case delta, ok := <-stream:
+			stopSpinner()
 			if !ok {
 				streamOpen = false
 				break
@@ -142,16 +146,27 @@ func consumeStream(stream <-chan string, fullCh <-chan apitypes.Response, errCh 
 }
 
 func extractMessage(fullResponse apitypes.Response) chat.Message {
-	var outputText strings.Builder
-	role := ""
-	for i := range fullResponse.Output {
-		if fullResponse.Output[i].Role != "" {
-			role = fullResponse.Output[i].Role
+	var b strings.Builder
+
+	for _, out := range fullResponse.Output {
+		// Only take assistant "message" outputs (skip tool calls etc).
+		if out.Type != "message" {
+			continue
 		}
-		for j := range fullResponse.Output[i].Content {
-			outputText.WriteString(fullResponse.Output[i].Content[j].Text)
+		if out.Role != "assistant" {
+			continue
+		}
+
+		for _, part := range out.Content {
+			// Only take text parts.
+			if part.Type == "output_text" || part.Type == "text" {
+				b.WriteString(part.Text)
+			}
 		}
 	}
-	msg := chat.Message{Role: role, Content: outputText.String()}
-	return msg
+
+	return chat.Message{
+		Role:    "assistant",
+		Content: b.String(),
+	}
 }
