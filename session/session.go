@@ -1,9 +1,9 @@
 package session
 
 import (
-	"cli-chat/internal/api"
-	"cli-chat/internal/apitypes"
-	"cli-chat/providers"
+	"terminal-chat/internal/api"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/providers"
 	"context"
 	"fmt"
 )

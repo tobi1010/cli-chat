@@ -1,9 +1,9 @@
 package settings
 
 import (
-	"cli-chat/paths"
 	"os"
 	"path/filepath"
+	"terminal-chat/paths"
 	"testing"
 
 	"github.com/stretchr/testify/require"

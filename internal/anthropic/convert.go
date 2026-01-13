@@ -1,7 +1,7 @@
 package anthropic
 
 import (
-	"cli-chat/internal/apitypes"
+	"terminal-chat/internal/apitypes"
 	"time"
 )
 

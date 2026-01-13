@@ -1,11 +1,11 @@
 package settings
 
 import (
-	"cli-chat/fileatomic"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"terminal-chat/fileatomic"
 )
 
 func Load(settingsPath string) (Settings, error) {

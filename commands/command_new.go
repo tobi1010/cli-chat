@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"cli-chat/chat"
-	"cli-chat/session"
 	"fmt"
+	"terminal-chat/chat"
+	"terminal-chat/session"
 )
 
 func CommandNew(s *session.Session, args []string) error {

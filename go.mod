@@ -1,4 +1,4 @@
-module cli-chat
+module terminal-chat
 
 go 1.25.4
 

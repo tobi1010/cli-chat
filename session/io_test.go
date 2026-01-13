@@ -1,14 +1,14 @@
 package session
 
 import (
-	"cli-chat/chat"
-	"cli-chat/fileatomic"
-	"cli-chat/index"
-	"cli-chat/paths"
-	"cli-chat/providers"
-	"cli-chat/settings"
 	"encoding/json"
 	"os"
+	"terminal-chat/chat"
+	"terminal-chat/fileatomic"
+	"terminal-chat/index"
+	"terminal-chat/paths"
+	"terminal-chat/providers"
+	"terminal-chat/settings"
 	"testing"
 	"time"
 

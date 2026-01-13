@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	AppDirName   = "cli-chat"
+	AppDirName   = "terminal-chat"
 	SettingsFile = "settings.json"
 	IndexFile    = "index.json"
 	ChatsDirName = "chats"

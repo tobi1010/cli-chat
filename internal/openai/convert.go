@@ -1,6 +1,6 @@
 package openai
 
-import "cli-chat/internal/apitypes"
+import "terminal-chat/internal/apitypes"
 
 func toApiModel(model Model) apitypes.Model {
 	return apitypes.Model{

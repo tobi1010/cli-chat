@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"cli-chat/internal/apitypes"
 	"context"
 	"fmt"
+	"terminal-chat/internal/apitypes"
 	"time"
 )
 

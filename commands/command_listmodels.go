@@ -1,14 +1,14 @@
 package commands
 
 import (
-	"cli-chat/internal/api"
-	"cli-chat/internal/apitypes"
-	"cli-chat/session"
 	"context"
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
+	"terminal-chat/internal/api"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/session"
 )
 
 var (

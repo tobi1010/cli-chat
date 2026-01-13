@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"cli-chat/session"
 	"context"
 	"fmt"
+	"terminal-chat/session"
 	"time"
 )
 

@@ -1,7 +1,7 @@
 package chat
 
 import (
-	"cli-chat/fileatomic"
+	"terminal-chat/fileatomic"
 	"encoding/json"
 	"fmt"
 	"os"

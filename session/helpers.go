@@ -1,15 +1,15 @@
 package session
 
 import (
-	"cli-chat/chat"
-	"cli-chat/debug"
-	"cli-chat/index"
-	"cli-chat/paths"
-	"cli-chat/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"terminal-chat/chat"
+	"terminal-chat/debug"
+	"terminal-chat/index"
+	"terminal-chat/paths"
+	"terminal-chat/settings"
 )
 
 func applyDb(s *Session, paths paths.Paths) error {

@@ -1,9 +1,9 @@
 package session
 
 import (
-	"cli-chat/paths"
 	"os"
 	"path/filepath"
+	"terminal-chat/paths"
 	"testing"
 	"time"
 

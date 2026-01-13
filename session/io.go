@@ -1,11 +1,11 @@
 package session
 
 import (
-	"cli-chat/cache"
-	"cli-chat/debug"
-	"cli-chat/fileatomic"
-	"cli-chat/paths"
-	"cli-chat/providers"
+	"terminal-chat/cache"
+	"terminal-chat/debug"
+	"terminal-chat/fileatomic"
+	"terminal-chat/paths"
+	"terminal-chat/providers"
 	"context"
 	"encoding/json"
 	"errors"

@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"cli-chat/session"
 	"fmt"
+	"terminal-chat/session"
 )
 
 func CommandSetApiKey(s *session.Session, args []string) error {

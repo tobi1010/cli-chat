@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"cli-chat/session"
 	"fmt"
 	"strconv"
+	"terminal-chat/session"
 )
 
 func CommandSetColumns(s *session.Session, args []string) error {

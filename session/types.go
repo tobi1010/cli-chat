@@ -1,15 +1,15 @@
 package session
 
 import (
-	"cli-chat/cache"
-	"cli-chat/chat"
-	"cli-chat/debug"
-	"cli-chat/index"
-	"cli-chat/internal/apitypes"
-	"cli-chat/internal/client"
-	"cli-chat/paths"
-	"cli-chat/settings"
 	"fmt"
+	"terminal-chat/cache"
+	"terminal-chat/chat"
+	"terminal-chat/debug"
+	"terminal-chat/index"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/internal/client"
+	"terminal-chat/paths"
+	"terminal-chat/settings"
 	"time"
 )
 

@@ -1,15 +1,15 @@
 package openai
 
 import (
-	"cli-chat/internal/apitypes"
-	"cli-chat/internal/client"
-	"cli-chat/internal/env"
-	"cli-chat/providers"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/internal/client"
+	"terminal-chat/internal/env"
+	"terminal-chat/providers"
 )
 
 func GetModels(ctx context.Context, client *client.Client, providerName string) ([]apitypes.Model, error) {

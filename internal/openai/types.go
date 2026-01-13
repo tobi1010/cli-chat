@@ -1,6 +1,6 @@
 package openai
 
-import "cli-chat/chat"
+import "terminal-chat/chat"
 
 type openAiPayload struct {
 	Model  string         `json:"model"`

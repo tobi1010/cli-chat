@@ -1,11 +1,11 @@
 package api
 
 import (
-	"cli-chat/chat"
-	"cli-chat/internal/anthropic"
-	"cli-chat/internal/apitypes"
-	"cli-chat/internal/client"
-	"cli-chat/internal/openai"
+	"terminal-chat/chat"
+	"terminal-chat/internal/anthropic"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/internal/client"
+	"terminal-chat/internal/openai"
 	"context"
 	"fmt"
 )

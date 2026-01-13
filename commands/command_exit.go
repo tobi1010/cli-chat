@@ -1,14 +1,14 @@
 package commands
 
 import (
-	"cli-chat/session"
 	"errors"
 	"fmt"
+	"terminal-chat/session"
 )
 
 var ErrExitRequested = errors.New("exit requested")
 
 func CommandExit(s *session.Session, args []string) error {
-	fmt.Println("Goodbye")
+	fmt.Printf("\nGoodbye\n")
 	return ErrExitRequested
 }

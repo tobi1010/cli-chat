@@ -2,22 +2,28 @@ package main
 
 import (
 	"bufio"
-	"cli-chat/chat"
-	"cli-chat/commands"
-	"cli-chat/internal/api"
-	"cli-chat/internal/apitypes"
-	"cli-chat/session"
-	"cli-chat/spinner"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
+	"terminal-chat/chat"
+	"terminal-chat/commands"
+	"terminal-chat/internal/api"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/session"
+	"terminal-chat/spinner"
+	"terminal-chat/util"
 )
 
 func startRepl(s *session.Session) error {
 	cmds := commands.GetCommands()
 	scanner := bufio.NewScanner(os.Stdin)
+	util.ClearScreen()
+	util.PrintTitle()
+	fmt.Println(strings.Repeat("-", s.AppSettings.Columns))
+	fmt.Printf("%shelp for command list\n", s.AppSettings.CommandPrefix)
+	fmt.Println(strings.Repeat("-", s.AppSettings.Columns))
 	for {
 		fmt.Printf("%s>", s.ModelLabel)
 		text, ok, err := readInput(scanner)

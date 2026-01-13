@@ -1,7 +1,7 @@
 package index
 
 import (
-	"cli-chat/paths"
+	"terminal-chat/paths"
 	"testing"
 	"time"
 

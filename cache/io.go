@@ -1,10 +1,10 @@
 package cache
 
 import (
-	"cli-chat/fileatomic"
 	"encoding/json"
 	"fmt"
 	"os"
+	"terminal-chat/fileatomic"
 )
 
 func Load(cachePath string) (*Cache, error) {

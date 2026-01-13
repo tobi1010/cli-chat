@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"cli-chat/providers"
-	"cli-chat/session"
 	"fmt"
+	"terminal-chat/providers"
+	"terminal-chat/session"
 )
 
 func CommandSetDefautlProvider(s *session.Session, args []string) error {

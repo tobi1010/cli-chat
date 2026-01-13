@@ -1,8 +1,8 @@
 package index
 
 import (
-	"cli-chat/chat"
-	"cli-chat/paths"
+	"terminal-chat/chat"
+	"terminal-chat/paths"
 	"fmt"
 	"time"
 )

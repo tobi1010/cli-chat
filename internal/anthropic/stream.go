@@ -1,10 +1,10 @@
 package anthropic
 
 import (
-	"cli-chat/chat"
-	"cli-chat/internal/apitypes"
-	"cli-chat/internal/client"
-	"cli-chat/providers"
+	"terminal-chat/chat"
+	"terminal-chat/internal/apitypes"
+	"terminal-chat/internal/client"
+	"terminal-chat/providers"
 	"context"
 	"fmt"
 )

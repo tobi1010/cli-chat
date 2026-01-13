@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"cli-chat/session"
+	"terminal-chat/session"
 )
 
 type CliCommand struct {

@@ -1,14 +1,14 @@
 package main
 
 import (
-	// "cli-chat/commands"
-	"cli-chat/debug"
-	"cli-chat/paths"
-	"cli-chat/session"
+	// "terminal-chat/commands"
 	"errors"
 	"flag"
 	"log"
 	"os"
+	"terminal-chat/debug"
+	"terminal-chat/paths"
+	"terminal-chat/session"
 )
 
 func main() {
@@ -35,12 +35,6 @@ func main() {
 		unwrapAndPrintErrors(err)
 		os.Exit(1)
 	}
-
-	// if err := commands.CommandPrintSettings(s, []string{}); err != nil {
-	// 	log.Printf("error printing settings:")
-	// 	unwrapAndPrintErrors(err)
-	// 	os.Exit(1)
-	// }
 
 	if err := startRepl(s); err != nil {
 		log.Printf("error in repl:")
