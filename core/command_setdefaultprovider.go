@@ -1,12 +1,11 @@
-package commands
+package core
 
 import (
 	"fmt"
 	"terminal-chat/providers"
-	"terminal-chat/session"
 )
 
-func CommandSetDefautlProvider(s *session.Session, args []string) error {
+func CommandSetDefautlProvider(s *Session, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: %sset-default-provider <provider>", s.AppSettings.CommandPrefix)
 	}
@@ -15,5 +14,5 @@ func CommandSetDefautlProvider(s *session.Session, args []string) error {
 		return fmt.Errorf("unknown provider: %s", args[0])
 	}
 	s.AppSettings.DefaultProvider = provider.ID
-	return s.Save(s.Paths.SettingsPath)
+	return s.SessionSave(s.Paths.SettingsPath)
 }

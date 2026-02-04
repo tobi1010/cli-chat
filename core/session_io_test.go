@@ -1,4 +1,4 @@
-package session
+package core
 
 import (
 	"encoding/json"
@@ -138,7 +138,7 @@ func initWithExistingFiles(t *testing.T, opt Opts) fixture {
 func TestOpen_FirstRun(t *testing.T) {
 	fx := initFirstRun(t)
 
-	s, err := Open(fx.Paths)
+	s, err := SessionOpen(fx.Paths)
 	require.NoError(t, err)
 
 	require.NotNil(t, s.Client)
@@ -158,7 +158,7 @@ func TestOpen_FirstRun(t *testing.T) {
 func TestOpen_LoadsExistingFiles(t *testing.T) {
 	fx := initWithExistingFiles(t, Opts{writeState: true, writeChat1: true, writeChat2: true})
 
-	s, err := Open(fx.Paths)
+	s, err := SessionOpen(fx.Paths)
 	require.NoError(t, err)
 
 	require.NotNil(t, s.Client)
@@ -197,13 +197,13 @@ func TestOpen_LoadsExistingFiles(t *testing.T) {
 
 func TestOpen_ChatMissing(t *testing.T) {
 	fx := initWithExistingFiles(t, Opts{writeState: true, writeChat1: false, writeChat2: true})
-	_, err := Open(fx.Paths)
+	_, err := SessionOpen(fx.Paths)
 	require.Error(t, err)
 }
 
 func TestOpen_SessionMissing(t *testing.T) {
 	fx := initWithExistingFiles(t, Opts{writeState: false, writeChat1: true, writeChat2: true})
-	s, err := Open(fx.Paths)
+	s, err := SessionOpen(fx.Paths)
 	require.NoError(t, err)
 	require.NotNil(t, s.Client)
 	require.NotNil(t, s.Chat)

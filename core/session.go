@@ -1,11 +1,11 @@
-package session
+package core
 
 import (
+	"context"
+	"fmt"
 	"terminal-chat/internal/api"
 	"terminal-chat/internal/apitypes"
 	"terminal-chat/providers"
-	"context"
-	"fmt"
 )
 
 func (s *Session) UpdateChat() error {

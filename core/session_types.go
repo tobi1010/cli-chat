@@ -1,4 +1,4 @@
-package session
+package core
 
 import (
 	"fmt"
@@ -19,6 +19,8 @@ type State struct {
 }
 
 type Session struct {
+	Registry     CommandRegistry
+	Meta         []CommandMeta
 	ProviderName string
 	ModelID      string
 	Chat         *chat.Chat
@@ -49,6 +51,11 @@ func NewDefaultSession() (*Session, error) {
 	s.Client = client.New(time.Duration(60 * time.Second))
 	s.ModelLabel = s.AppSettings.DefaultModel
 	s.SystemPrompt = ""
+	s.Registry, err = NewRegistry()
+	if err != nil {
+		return nil, fmt.Errorf("building registry: %w", err)
+	}
+	s.Meta = NewCommandMeta()
 
 	debug.Dump("default session:", s)
 	return &s, nil

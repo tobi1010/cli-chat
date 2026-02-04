@@ -1,4 +1,4 @@
-package commands
+package core
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"strings"
 	"terminal-chat/internal/api"
 	"terminal-chat/internal/apitypes"
-	"terminal-chat/session"
 )
 
 var (
@@ -20,7 +19,7 @@ var (
 	dateRegex = regexp.MustCompile(`-\d{4}-\d{2}-\d{2}$`)
 )
 
-func CommandListModels(s *session.Session, args []string) error {
+func CommandListModels(s *Session, args []string) error {
 	ctx := context.Background()
 
 	models, err := api.GetModels(ctx, s.Client, s.ProviderName)

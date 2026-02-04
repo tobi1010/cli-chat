@@ -1,13 +1,12 @@
-package commands
+package core
 
 import (
 	"context"
 	"fmt"
-	"terminal-chat/session"
 	"time"
 )
 
-func CommandSwitchModel(s *session.Session, args []string) error {
+func CommandSwitchModel(s *Session, args []string) error {
 	if len(args) < 1 {
 		fmt.Printf("usage: /switch-model <name>\n")
 		return nil
@@ -25,7 +24,7 @@ func CommandSwitchModel(s *session.Session, args []string) error {
 	}
 	s.ModelID = model.ID
 
-	if err := s.Save(s.Paths.SessionPath); err != nil {
+	if err := s.SessionSave(s.Paths.SessionPath); err != nil {
 		return fmt.Errorf("saving session: %w", err)
 	}
 	return nil

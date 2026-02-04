@@ -1,11 +1,10 @@
-package commands
+package core
 
 import (
 	"fmt"
-	"terminal-chat/session"
 )
 
-func CommandSetPrefix(s *session.Session, args []string) error {
+func CommandSetPrefix(s *Session, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: %sset-prefix <prefix>", s.AppSettings.CommandPrefix)
 	}

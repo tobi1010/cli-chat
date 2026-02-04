@@ -1,11 +1,10 @@
-package commands
+package core
 
 import (
 	"fmt"
-	"terminal-chat/session"
 )
 
-func CommandListChats(s *session.Session, args []string) error {
+func CommandListChats(s *Session, args []string) error {
 	i := 1
 	for _, ch := range s.DB.Chats {
 		chat, err := s.DB.GetByID(ch.ID)

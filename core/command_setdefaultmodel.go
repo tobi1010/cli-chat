@@ -1,11 +1,10 @@
-package commands
+package core
 
 import (
 	"fmt"
-	"terminal-chat/session"
 )
 
-func CommandSetDefautlModel(s *session.Session, args []string) error {
+func CommandSetDefautlModel(s *Session, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: %sset-default-model <model>", s.AppSettings.CommandPrefix)
 	}
@@ -14,5 +13,5 @@ func CommandSetDefautlModel(s *session.Session, args []string) error {
 		return fmt.Errorf("unknown model %q for provider %q", args[0], s.AppSettings.DefaultProvider)
 	}
 	s.AppSettings.DefaultModel = model.ID
-	return s.Save(s.Paths.SettingsPath)
+	return s.SessionSave(s.Paths.SettingsPath)
 }

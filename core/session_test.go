@@ -1,4 +1,4 @@
-package session
+package core
 
 import (
 	"os"
@@ -16,7 +16,7 @@ func TestUpdateChat(t *testing.T) {
 
 	p, err := paths.ResolvePaths()
 	require.NoError(t, err)
-	s, err := Open(p)
+	s, err := SessionOpen(p)
 	require.NoError(t, err)
 	require.NotNil(t, s)
 	require.NotNil(t, s.Chat)

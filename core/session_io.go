@@ -1,20 +1,20 @@
-package session
+package core
 
 import (
-	"terminal-chat/cache"
-	"terminal-chat/debug"
-	"terminal-chat/fileatomic"
-	"terminal-chat/paths"
-	"terminal-chat/providers"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"terminal-chat/cache"
+	"terminal-chat/debug"
+	"terminal-chat/fileatomic"
+	"terminal-chat/paths"
+	"terminal-chat/providers"
 	"time"
 )
 
-func Open(paths paths.Paths) (*Session, error) {
+func SessionOpen(paths paths.Paths) (*Session, error) {
 	s, err := NewDefaultSession()
 
 	if err != nil {
@@ -98,7 +98,7 @@ func Open(paths paths.Paths) (*Session, error) {
 
 }
 
-func (s *Session) Save(sessionPath string) error {
+func (s *Session) SessionSave(sessionPath string) error {
 	st := State{
 		LastProvider: s.ProviderName, LastModelID: s.ModelID,
 	}

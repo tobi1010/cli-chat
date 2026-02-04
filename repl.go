@@ -8,16 +8,14 @@ import (
 	"os"
 	"strings"
 	"terminal-chat/chat"
-	"terminal-chat/commands"
+	"terminal-chat/core"
 	"terminal-chat/internal/api"
 	"terminal-chat/internal/apitypes"
-	"terminal-chat/session"
 	"terminal-chat/spinner"
 	"terminal-chat/util"
 )
 
-func startRepl(s *session.Session) error {
-	cmds := commands.GetCommands()
+func startRepl(s *core.Session, commandRegistry core.CommandRegistry) error {
 	scanner := bufio.NewScanner(os.Stdin)
 	util.ClearScreen()
 	util.PrintTitle()
@@ -36,9 +34,9 @@ func startRepl(s *session.Session) error {
 		if text == "" {
 			continue
 		}
-		handled, err := handleCommand(s, cmds, text)
+		handled, err := handleCommand(s, commandRegistry, text)
 		if err != nil {
-			if errors.Is(err, commands.ErrExitRequested) {
+			if errors.Is(err, core.ErrExitRequested) {
 				return nil
 			}
 			fmt.Println(err.Error())
@@ -63,7 +61,7 @@ func readInput(scanner *bufio.Scanner) (string, bool, error) {
 	return strings.TrimSpace(scanner.Text()), true, nil
 }
 
-func handleCommand(s *session.Session, cmds map[string]commands.CliCommand, text string) (bool, error) {
+func handleCommand(s *core.Session, commandRegistry core.CommandRegistry, text string) (bool, error) {
 	if !strings.HasPrefix(text, s.AppSettings.CommandPrefix) {
 		return false, nil
 	}
@@ -74,9 +72,9 @@ func handleCommand(s *session.Session, cmds map[string]commands.CliCommand, text
 		return true, nil
 	}
 
-	if command, found := cmds[tokens[0]]; found {
+	if command, found := commandRegistry[tokens[0]]; found {
 		if err := command.Callback(s, tokens[1:]); err != nil {
-			if errors.Is(err, commands.ErrExitRequested) {
+			if errors.Is(err, core.ErrExitRequested) {
 				return true, err
 			}
 			return true, fmt.Errorf("Error executing command: %w", err)
@@ -88,7 +86,7 @@ func handleCommand(s *session.Session, cmds map[string]commands.CliCommand, text
 	return true, nil
 }
 
-func handleChat(s *session.Session, text string) error {
+func handleChat(s *core.Session, text string) error {
 	fmt.Println(strings.Repeat("-", s.AppSettings.Columns))
 	ctx := context.Background()
 	s.Chat.AddMessage(chat.Message{Role: "user", Content: text})

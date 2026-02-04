@@ -1,12 +1,11 @@
-package commands
+package core
 
 import (
 	"fmt"
 	"strconv"
-	"terminal-chat/session"
 )
 
-func CommandSetColumns(s *session.Session, args []string) error {
+func CommandSetColumns(s *Session, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: %set-columns <columns>", s.AppSettings.CommandPrefix)
 	}

@@ -1,11 +1,10 @@
-package commands
+package core
 
 import (
 	"fmt"
-	"terminal-chat/session"
 )
 
-func CommandSetSystemPrompt(s *session.Session, args []string) error {
+func CommandSetSystemPrompt(s *Session, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: %sset-system-prompt <prompt>", s.AppSettings.CommandPrefix)
 	}

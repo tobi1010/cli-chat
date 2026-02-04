@@ -1,12 +1,11 @@
-package commands
+package core
 
 import (
 	"fmt"
 	"strconv"
-	"terminal-chat/session"
 )
 
-func CommandSetTTL(s *session.Session, args []string) error {
+func CommandSetTTL(s *Session, args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("usage: /set-ttl <seconds>")
 	}
